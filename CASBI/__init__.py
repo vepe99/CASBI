@@ -1,5 +1,6 @@
 
 from importlib import metadata
+from .utils import *
 
 __version__ = metadata.version(__package__)
 del metadata
