@@ -31,6 +31,7 @@ dependencies = [
     "numpy >= 1.26.4",
     "pandas >= 1.5.3", 
     "pynbody >= 1.6.0", 
+    "seaborn >= 0.12.2",
     "scikit-learn >= 1.4.1",
     "scipy == 1.13.0",
     "torch > 2.2.2",
