@@ -7,8 +7,11 @@ from scipy.spatial.distance import jensenshannon as js_div
 from multiprocessing import Pool
 import pynbody as pb
 
+import os
+import subprocess
 import re
 from tqdm.notebook import tqdm
+
 
 """
 ===========================================================================
@@ -483,4 +486,9 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
         ax[1, 0].legend(title=f'Galaxy: {galaxy} \n nll: {nll[0]:.2f} \n kl:{kl[0]:.2f} \n js:{js:.2f}', handles=patches, loc='lower left')
 
 
-
+"""
+====================
+DISTRIBUTED TRAINING 
+====================
+"""
+d
