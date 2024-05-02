@@ -27,6 +27,13 @@ classifiers = [
 ]
 dependencies = [
     "click",
+    "matplotlib >= 3.7.1",
+    "numpy >= 1.26.4",
+    "pandas >= 1.5.3", 
+    "scikit-learn >= 1.4.1",
+    "scipy == 1.13.0",
+    "torch > 2.2.2",
+    "tqdm >= 4.65.0",
 ]
 
 [project.optional-dependencies]
