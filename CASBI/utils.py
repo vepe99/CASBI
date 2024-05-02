@@ -1,15 +1,20 @@
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from scipy.stats import gaussian_kde
+from scipy.special import kl_div
+from scipy.spatial.distance import jensenshannon as js_div
 from multiprocessing import Pool
-
 import pynbody as pb
 
 import re
 from tqdm.notebook import tqdm
 
-
-########GENERATION OF THE FILE OBSERVATION AND PARAMETERS FOR THE TRAINING SET########
+"""
+===========================================================================
+GENERATION OF THE FILEs OF OBSERVATIONS AND PARAMETERS FOR THE TRAINING SET
+===========================================================================
+"""
 def extract_parameter_array(sim_path='str', file_path='str') -> None:
     """
     Extract the parameters and observables from the path. Checks all the possible errors and if one is found it is saved as an 'error_file'.  
@@ -153,9 +158,12 @@ def gen_files(sim_path: str, file_path: str) -> None:
 
     for p in tqdm(sim_path):
         extract_parameter_array(sim_path=p, file_path=file_path)
-        
-        
-#######GENERATION OF THE DATAFRAME FOR THE TRAINING SET########
+
+"""        
+================================================        
+GENERATION OF THE DATAFRAME 
+================================================
+"""
 def rescale(df, mean_and_std_path = str) -> pd.DataFrame:
     '''
     Rescale the data in the dataframe by removing to each column the mean and dividing by the standard deviation.
@@ -318,4 +326,69 @@ def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file:str, perc_
     df[other_cols] = rescale(df[other_cols]) #nomalization must be then reverted during inference to get the correct results
     df.to_parquet(dataframe_path + '.parquet')
 
+"""
+================
+PLOT FUNCTION
+================
+"""
+def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, levels=5,):
+    """
+    
+    
+    
+    """
+    fig, ax = plt.subplots(2, 2, figsize=(6, 6), 
+                        gridspec_kw={"height_ratios": (.15, .85), 
+                                    "width_ratios": (.85, .15)})
+    ax[0, 1].remove()
+
+    colors = [['red'], ['black']]
+    patches = []
+
+    for i, data_type in enumerate(df_joinplot['Data'].unique()):
+        # plot kde for data_type in ['simulation', 'generated']
+        x = df_joinplot['feh'][df_joinplot['Data'] == data_type]
+        y = df_joinplot['ofe'][df_joinplot['Data'] == data_type]
+
+    
+        # Calculate 2D KDE
+        kde = gaussian_kde(np.vstack([x, y]))
+
+        # Create a grid of points for which to evaluate the KDE
+        x_d = np.linspace(min(x), max(x), 100)
+        y_d = np.linspace(min(y), max(y), 100)
+        X, Y = np.meshgrid(x_d, y_d)
+        Z = kde.evaluate(np.vstack([X.ravel(), Y.ravel()]))
+
+        # Plot 2D KDE
+        contour = ax[1, 0].contour(X, Y, Z.reshape(X.shape), levels=levels,  alpha=0.7, colors=colors[i])
+        
+        # Create a patch for the legend
+        patches.append(mpatches.Patch(color=contour.collections[0].get_edgecolor(), label=data_type))
+        
+        # Calculate densities
+        kde_x = gaussian_kde(x, )
+        kde_y = gaussian_kde(y, )
+
+        # Create an array of values for which to evaluate the KDE
+        x_d = np.linspace(min(x), max(x), 1000)
+        y_d = np.linspace(min(y), max(y), 1000)
+
+        # Plot KDEs on the marginals
+        ax[0, 0].plot(x_d, kde_x(x_d), color=colors[i][0])
+        ax[1, 1].plot(kde_y(y_d), y_d, color=colors[i][0])
+
+        # Remove labels from the marginal axes
+        ax[0, 0].set_xticks([])
+        ax[1, 1].set_yticks([])
+        # ax[1, 0].text(ax[1,0].get_xlim()[0], 0.6, galaxy)
+        
+
+        # Set labels on the joint plot
+        ax[1, 0].set_xlabel('[Fe/H]')
+        ax[1, 0].set_ylabel('[O/Fe]')
+        
+        
+        # Add the legend
+        ax[1, 0].legend(title=f'Galaxy: {galaxy} \n nll: {nll[0]:.2f} \n kl:{kl[0]:.2f} \n js:{js:.2f}', handles=patches, loc='lower left')
 
