@@ -327,6 +327,96 @@ def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file:str, perc_
     df.to_parquet(dataframe_path + '.parquet')
 
 """
+==========================
+TRAIN, VALIDATION AND TEST 
+==========================
+"""
+def get_even_space_sample(df_mass_masked):
+    '''
+    Given a dataframe of galaxy in a range of mass, it returns 10 equally infall time spaced samples  
+    '''
+    len_infall_time = len(df_mass_masked['infall_time'].unique())
+    index_val_time = np.linspace(0, len_infall_time-1, 10)
+    time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
+    df_time = pd.DataFrame(columns=df_mass_masked.columns)
+    for t in time:
+        temp = df_mass_masked[df_mass_masked['infall_time']==t]
+        galaxy_temp = temp.sample(1)['Galaxy_name'].values[0]
+        df_time = pd.concat((df_time, df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]) )
+
+    return df_time
+
+def load_train_objs(df_path:str, train_path:str, val_path:str, test_path:str) -> None:
+    """
+    Load and preprocess training data.
+
+    Parameters:
+    - df_path (str): Path to the input data file.
+    - train_path (str): Path to save the preprocessed training data.
+    - val_path (str): Path to save the validation data.
+    - test_path (str): Path to save the test data.
+
+    Returns:
+    None
+    """
+    train_set = pd.read_parquet(df_path) 
+    low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
+    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass])
+    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
+    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
+    val_set = pd.concat([low_mass, intermediate_mass, high_mass])
+    
+    train_set = train_set[~train_set['Galaxy_name'].isin(val_set['Galaxy_name'])]
+    
+    low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
+    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass])
+    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
+    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
+    test_set = pd.concat([low_mass, intermediate_mass, high_mass])
+    test_set.to_parquet(test_path)
+    
+    train_set = train_set[~train_set['Galaxy_name'].isin(test_set['Galaxy_name'])]
+    print('finish prepare data')
+
+"""
+METRIC TEST
+"""
+
+def get_test_metrice(test_df:pd.DataFrame):
+    """
+    Return the KL and JS divergence between the KDE of the true data and the generated data for the test set.
+    
+    Parameters
+    ----------
+    test_df : pd.DataFrame
+        The test set dataframe.
+    
+    Returns
+    -------
+    kl_div_value : float
+        The KL divergence between the KDE of the true data and the generated data.
+    js_div_value : float
+        The JS divergence between the KDE of the true data and the generated data.
+    """
+    
+    kde_value = np.zeros(500*len(test_df['Galaxy_name'].unique()))
+    flow_pdf = np.zeros(500*len(test_df['Galaxy_name'].unique()))
+    i = 0
+    for galaxy in test_df['Galaxy_name'].unique():
+        galaxy_data = test_df[test_df['Galaxy_name']==galaxy]
+        x = galaxy_data['feh']
+        y = galaxy_data['ofe']
+        kde = gaussian_kde(np.vstack([x, y]))
+        kde_value[i*500:(i+1)*500] = kde.evaluate(np.vstack([x.ravel(), y.ravel()]))
+        flow_pdf[i*500:(i+1)*500]  = Flow.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float))
+        i+=1
+        
+    kl_div_value = kl_div(kde_value, flow_pdf)
+    js_div_value = js_div(kde_value, flow_pdf)
+    
+    return kl_div_value, js_div_value
+
+"""
 ================
 PLOT FUNCTION
 ================
@@ -391,4 +481,6 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
         
         # Add the legend
         ax[1, 0].legend(title=f'Galaxy: {galaxy} \n nll: {nll[0]:.2f} \n kl:{kl[0]:.2f} \n js:{js:.2f}', handles=patches, loc='lower left')
+
+
 
