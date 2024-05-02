@@ -7,3 +7,6 @@ This is an example function:
 
 .. automodule:: CASBI
     :members:
+
+.. automodule:: CASBI.utils
+    :members:
