@@ -491,3 +491,11 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
 DISTRIBUTED TRAINING 
 ====================
 """
+def distributed_training():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.join(script_dir, "distributed_training.py")
+    command = f"torchrun --standalone --nproc_per_node=2  {script_path} 1 1"
+    try:
+        subprocess.run(command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Script execution failed with error: {e.returncode}")
