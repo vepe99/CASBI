@@ -8,8 +8,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'CASBI'
-copyright = '2024, Your Name'
-author = 'Your Name'
+copyright = '2024, vepe99'
+author = 'vepe99'
 
 # -- General configuration ---------------------------------------------------
 
