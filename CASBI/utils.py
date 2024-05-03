@@ -14,9 +14,9 @@ from tqdm.notebook import tqdm
 
 
 """
-===========================================================================
+================================================================================
 GENERATION OF THE FILEs OF OBSERVATIONS AND PARAMETERS FOR THE TRAINING SET
-===========================================================================
+================================================================================
 In this section we define the functions to extract the parameters and observables from the simulation snapshots and save them in .npz files.
 """
 def extract_parameter_array(sim_path='str', file_path='str') -> None:
@@ -167,6 +167,8 @@ def gen_files(sim_path: str, file_path: str) -> None:
 ================================================        
 GENERATION OF THE DATAFRAME 
 ================================================
+
+
 """
 def rescale(df, mean_and_std_path = str) -> pd.DataFrame:
     '''
@@ -331,9 +333,11 @@ def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file:str, perc_
     df.to_parquet(dataframe_path + '.parquet')
 
 """
-==========================
+================================================================================
 TRAIN, VALIDATION AND TEST 
-==========================
+================================================================================
+
+
 """
 def get_even_space_sample(df_mass_masked):
     '''
@@ -383,7 +387,11 @@ def load_train_objs(df_path:str, train_path:str, val_path:str, test_path:str) ->
     print('finish prepare data')
 
 """
+================================================================================
 METRIC TEST
+================================================================================
+
+
 """
 
 def get_test_metrice(test_df:pd.DataFrame):
@@ -421,9 +429,11 @@ def get_test_metrice(test_df:pd.DataFrame):
     return kl_div_value, js_div_value
 
 """
-================
+================================================================================
 PLOT FUNCTION
-================
+================================================================================
+
+
 """
 def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, levels=5,):
     """
