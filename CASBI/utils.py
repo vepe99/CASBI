@@ -183,14 +183,14 @@ def rescale(df, mean_and_std_path = str) -> pd.DataFrame:
     None
     '''
     columns = []
-    for col in df.columns[:-1]:
+    for col in df.columns:
         columns.append(f'mean_{col}')
         columns.append(f'std_{col}')
     mean_and_std = pd.DataFrame(columns=columns)
     for col in df.columns:
         mean_and_std.loc[0, f'mean_{col}'] = df[col].mean()
         mean_and_std.loc[0, f'std_{col}'] = df[col].std()   
-    mean_and_std.to_parquet(mean_and_std_path + '.parquet')    
+    mean_and_std.to_parquet(mean_and_std_path + 'mean_and_std.parquet')    
     return df.apply(lambda x: (x.to_numpy() - x.to_numpy().mean()) / x.to_numpy().std(), axis=0)
 
 def inverse_rescale(df, mean_and_std_file = str) -> pd.DataFrame:
@@ -251,7 +251,7 @@ def load_data(file_path, mass_cut=6*1e9, min_n_star=float, min_feh=float, min_of
             if l < n_subsamples:
                 n_subsamples = l
             subsample = np.random.choice(a=range(l), size=n_subsamples, replace=False)
-            data = np.zeros((n_subsamples, len(components)))
+            data = np.zeros((n_subsamples, len(components)-1))
             data[:, 0] = file_array['feh'][(file_array['feh']>min_feh) & (file_array['ofe']>min_ofe)][subsample]
             data[:, 1] = file_array['ofe'][(file_array['feh']>min_feh) & (file_array['ofe']>min_ofe)][subsample]
             ones = np.ones(n_subsamples)
@@ -267,12 +267,12 @@ def load_data(file_path, mass_cut=6*1e9, min_n_star=float, min_feh=float, min_of
             data[:, 11] = file_array['std_metallicity']*ones
             data[:, 12] = file_array['std_FeMassFrac']*ones
             data[:, 13] = file_array['std_OMassFrac']*ones
-            data[:, 14] = [file_array['Galaxy_name'] for i in range(len(ones))]
-            
-            df_temp = pd.DataFrame(data, columns=components)
+             
+            df_temp = pd.DataFrame(data, columns=components[:-1])
+            df_temp['Galaxy_name'] = file_array['Galaxy_name']
             return df_temp
         
-def preprocess_setup(file_dir:str,  preprocess_file:str) -> None:
+def preprocess_setup(file_dir:str,  preprocess_dir:str) -> None:
     """
     Save the necessary files to preprocess the data for the training set. It savez aggregated information of Galaxy Mass, Number of stars, [Fe/H] and [O/Fe] in the preprocess_dir.
     so that percentile cut can be computed in gen_dataframe funciton
@@ -286,7 +286,8 @@ def preprocess_setup(file_dir:str,  preprocess_file:str) -> None:
         
     Returns
     -------
-    None
+    preprocess_file_path: str
+        Path to the file with the preprocess information.
     
     """
     Galaxy_Mass = []
@@ -296,7 +297,7 @@ def preprocess_setup(file_dir:str,  preprocess_file:str) -> None:
     
     for galaxy in tqdm(os.listdir(file_dir)):
         if not("error" in galaxy): 
-            path = directory + galaxy 
+            path = file_dir + galaxy 
             mass = np.load(path)['star_mass']
             number_star = len(np.load(path.replace('parameters', 'observables'))['feh'])
             Galaxy_Mass.append(float(mass))    
@@ -310,12 +311,14 @@ def preprocess_setup(file_dir:str,  preprocess_file:str) -> None:
             
     Galaxy_Mass = np.array(Galaxy_Mass)
     Number_Star = np.array(Number_Star) 
-    np.savez(file='preprocess_file', Galaxy_Mass=Galaxy_Mass, Number_Star=Number_Star, FeH=FeH, OFe=OFe)
+    np.savez(file=f'{preprocess_dir}preprocess_file', Galaxy_Mass=Galaxy_Mass, Number_Star=Number_Star, FeH=FeH, OFe=OFe)
+    return f'{preprocess_dir}preprocess_file.npz'
 
-def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file:str, perc_star=10, perc_feh=0.1, perc_ofe=0.1) -> None:
-    min_n_star = np.percentile(np.load(preprocess_file)['Number_Star'], perc_star)
-    min_feh    = np.percentile(np.load(preprocess_file)['FeH'], perc_feh)
-    min_ofe    = np.percentile(np.load(preprocess_file)['OFe'], perc_ofe) 
+
+def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file_path:str, perc_star=10, perc_feh=0.1, perc_ofe=0.1) -> None:
+    min_n_star = np.percentile(np.load(preprocess_file_path)['Number_Star'], perc_star)
+    min_feh    = np.percentile(np.load(preprocess_file_path)['FeH'], perc_feh)
+    min_ofe    = np.percentile(np.load(preprocess_file_path)['OFe'], perc_ofe) 
     mass_cat = 6*1e9
      
     all_files = sorted(os.listdir(file_dir))
@@ -329,8 +332,10 @@ def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file:str, perc_
     
     bad_column = 'Galaxy_name'
     other_cols = df.columns.difference([bad_column])    
-    df[other_cols] = rescale(df[other_cols]) #nomalization must be then reverted during inference to get the correct results
-    df.to_parquet(dataframe_path + '.parquet')
+    df[other_cols] = rescale(df[other_cols], mean_and_std_path=preprocess_file_path.replace('preprocess_file.npz', '')) #nomalization must be then reverted during inference to get the correct results
+    df.to_parquet(dataframe_path + 'dataframe.parquet')
+    
+    return df 
 
 """
 ================================================================================
