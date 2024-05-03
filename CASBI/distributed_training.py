@@ -64,7 +64,7 @@ class Trainer:
     '''
     def __init__(
         self,
-        model: NF_condGLOW,
+        model,
         train_data: torch.utils.data.DataLoader,
         val_data: torch.utils.data.DataLoader,
         test_data: torch.utils.data.DataLoader,
@@ -211,9 +211,7 @@ def get_even_space_sample(df_mass_masked):
     return df_time
     
     
-def load_train_objs(path_train_dataframe:str, 
-                    model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2]),
-                    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4),):
+def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     train_set = pd.read_parquet(path_train_dataframe) # load your dataset
     # Galax_name = train_set['Galaxy_name'].unique()
     # test_galaxy = np.random.choice(Galax_name, int(len(Galax_name)*0.1), replace=False)
@@ -238,7 +236,7 @@ def load_train_objs(path_train_dataframe:str,
     intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
     high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
     test_set = pd.concat([low_mass, intermediate_mass, high_mass])
-    test_set.to_parquet(f'/export/home/vgiusepp/MW_MH/data/test_set.parquet')
+    test_set.to_parquet(f'{test_and_nll_path}test_set.parquet')
     
     train_set = train_set[~train_set['Galaxy_name'].isin(test_set['Galaxy_name'])]
     print('finish prepare data')
@@ -249,8 +247,8 @@ def load_train_objs(path_train_dataframe:str,
     test_set = torch.from_numpy(test_set.values)
     val_set =torch.from_numpy(val_set.values)
     train_set = torch.from_numpy(train_set.values)
-    # model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
-    # optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
+    model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
     return train_set, val_set, test_set, model, optimizer     
 
 def prepare_dataloader(dataset, batch_size: int):
@@ -262,19 +260,20 @@ def prepare_dataloader(dataset, batch_size: int):
         sampler=DistributedSampler(dataset))
 
 def main(path_train_dataframe: str, 
-         total_epochs: int, batch_size: int,
-         model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2]),
-         optimizer = torch.optim.SGD(model.parameters(), lr=1e-4),
-         snapshot_path: str = "./snapshot/snapshot.pt"):
+         test_and_nll_path: str,
+         total_epochs: int, 
+         batch_size: int,
+         snapshot_path: str = "./snapshot/snapshot.pt",
+         ):
     ddp_setup()
-    train_set, val_set, test_set, model, optimizer = load_train_objs(path_train_dataframe, model, optimizer)
+    train_set, val_set, test_set, model, optimizer = load_train_objs(path_train_dataframe, test_and_nll_path)
     train_data = prepare_dataloader(train_set, batch_size)
     val_data = prepare_dataloader(val_set, batch_size)
     test_data = prepare_dataloader(test_set, batch_size)
     trainer = Trainer(model, train_data, val_data, test_data, optimizer, snapshot_path)
     trainer.train(total_epochs)
     negative_log_likelihood = trainer.test(test_data)
-    np.savez('/export/home/vgiusepp/MW_MH/data/test_loss', nll=negative_log_likelihood.cpu().detach())
+    np.savez(f'{test_and_nll_path}test_loss', nll=negative_log_likelihood.cpu().detach())
     destroy_process_group()
     
 
@@ -283,15 +282,14 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='simple distributed training job')
     parser.add_argument('path_train_dataframe', type=str, help='Path to the training dataframe in parquet format')
+    parser.add_argument('test_and_nll_path', type=str, help='Path to save the test set and the negative log likelihood')
     parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
     parser.add_argument('--batch_size', default=1024, type=int, help='Input batch size on each device (default: 32)')
     parser.add_argument('snapshot_path', default="./snapshot/snapshot.pt", type=str, help='Path to save the training snapshots')
-    parser.add_argument('model', default=NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2]), type=NF_condGLOW, help='Model to be trained')
-    parser.add_argument('optimizer', default=torch.optim.SGD(model.parameters(), lr=1e-4), type=torch.optim.Optimizer, help='Optimizer for the model')
     args = parser.parse_args()
 
 
     begin=time.time()
-    main(args.path_train_dataframe, args.total_epochs, args.batch_size, args.snapshot_path, args.model, args.optimizer)
+    main(args.path_train_dataframe, args.test_and_nll_path, args.total_epochs, args.batch_size, args.snapshot_path,)
     end = time.time()
     print('total time', (end-begin)/60, 'minutes')
