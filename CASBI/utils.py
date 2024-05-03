@@ -161,8 +161,11 @@ def gen_files(sim_path: str, file_path: str) -> None:
     
     """                       
 
-    for p in tqdm(sim_path):
-        extract_parameter_array(sim_path=p, file_path=file_path)
+    # for p in tqdm(sim_path):
+    #     extract_parameter_array(sim_path=p, file_path=file_path)
+    pool = Pool(processes=100)
+    pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
+    
 
 """        
 ================================================        
