@@ -502,10 +502,26 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
 DISTRIBUTED TRAINING 
 ====================
 """
-def distributed_training():
+def distributed_training(path_train_dataframe: str, world_size: int, number_of_epochs:int, snapshot_path='snapshot/snapshot.pth'):
+    """
+    Function to lunch the bash script torchrun to train the model in a distributed way.
+    The model is saved in the snapshot.ph file.
+    The tensorboard logs are saved in the folder 'runs'.
+    
+    Parameters
+    ----------
+    world_size : int
+        Number of nodes to use for the training.
+    number_of_epochs : int
+        Number of epochs to train the model.
+    
+    Returns
+    -------
+    None
+    """
     script_dir = os.path.dirname(os.path.realpath(__file__))
     script_path = os.path.join(script_dir, "distributed_training.py")
-    command = f"torchrun --standalone --nproc_per_node=2  {script_path} 1 1"
+    command = f"torchrun --standalone --nproc_per_node={world_size} {script_path} {path_train_dataframe} {number_of_epochs} {snapshot_path}"
     try:
         subprocess.run(command, shell=True, check=True)
     except subprocess.CalledProcessError as e:

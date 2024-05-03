@@ -40,7 +40,6 @@ class Trainer:
         val_data (torch.utils.data.DataLoader): The data loader for validation data.
         test_data (torch.utils.data.DataLoader): The data loader for test data.
         optimizer (torch.optim.Optimizer): The optimizer for model parameters.
-        save_every (int): The frequency at which to save training snapshots.
         snapshot_path (str): The path to save the training snapshots.
         
     Attributes:
@@ -51,7 +50,6 @@ class Trainer:
         test_data (torch.utils.data.DataLoader): The data loader for test data.
         best_loss (float): The best validation loss achieved during training.
         optimizer (torch.optim.Optimizer): The optimizer for model parameters.
-        save_every (int): The frequency at which to save training snapshots.
         epochs_run (int): The number of epochs already run.
         snapshot_path (str): The path to save the training snapshots.
         logger (SummaryWriter): The logger for training progress.
@@ -71,7 +69,6 @@ class Trainer:
         val_data: torch.utils.data.DataLoader,
         test_data: torch.utils.data.DataLoader,
         optimizer: torch.optim.Optimizer,  
-        save_every: int,
         snapshot_path: str,) -> None:
         self.gpu_id = int(os.environ["LOCAL_RANK"])
         self.model = model.to(self.gpu_id)
@@ -80,7 +77,6 @@ class Trainer:
         self.test_data = test_data
         self.best_loss = 1_000
         self.optimizer = optimizer
-        self.save_every = save_every
         self.epochs_run = 0
         self.snapshot_path = snapshot_path
         if os.path.exists(snapshot_path):
@@ -215,8 +211,8 @@ def get_even_space_sample(df_mass_masked):
     return df_time
     
     
-def load_train_objs():
-    train_set = pd.read_parquet('/export/home/vgiusepp/MW_MH/data/preprocessing_subsample/preprocess_training_set_Galaxy_name_subsample.parquet') # load your dataset
+def load_train_objs(path_train_dataframe:str):
+    train_set = pd.read_parquet(path_train_dataframe) # load your dataset
     # Galax_name = train_set['Galaxy_name'].unique()
     # test_galaxy = np.random.choice(Galax_name, int(len(Galax_name)*0.1), replace=False)
     # test_set = train_set[train_set['Galaxy_name'].isin(test_galaxy)]
@@ -263,13 +259,13 @@ def prepare_dataloader(dataset, batch_size: int):
         shuffle=False,
         sampler=DistributedSampler(dataset))
 
-def main(save_every: int, total_epochs: int, batch_size: int, snapshot_path: str = "snapshot.pt"):
+def main(path_train_dataframe: str, total_epochs: int, batch_size: int, snapshot_path: str = "./snapshot/snapshot.pt"):
     ddp_setup()
-    train_set, val_set, test_set, model, optimizer = load_train_objs()
+    train_set, val_set, test_set, model, optimizer = load_train_objs(path_train_dataframe)
     train_data = prepare_dataloader(train_set, batch_size)
     val_data = prepare_dataloader(val_set, batch_size)
     test_data = prepare_dataloader(test_set, batch_size)
-    trainer = Trainer(model, train_data, val_data, test_data, optimizer, save_every, snapshot_path)
+    trainer = Trainer(model, train_data, val_data, test_data, optimizer, snapshot_path)
     trainer.train(total_epochs)
     negative_log_likelihood = trainer.test(test_data)
     np.savez('/export/home/vgiusepp/MW_MH/data/test_loss', nll=negative_log_likelihood.cpu().detach())
@@ -278,16 +274,16 @@ def main(save_every: int, total_epochs: int, batch_size: int, snapshot_path: str
 
 
 if __name__ == "__main__":
-    print(int(os.environ["WORLD_SIZE"]))
     import argparse
     parser = argparse.ArgumentParser(description='simple distributed training job')
+    parser.add_argument('path_train_dataframe', type=str, help='Path to the training dataframe in parquet format')
     parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-    parser.add_argument('save_every', type=int, help='How often to save a snapshot')
-    parser.add_argument('--batch_size', default=256, type=int, help='Input batch size on each device (default: 32)')
+    parser.add_argument('--batch_size', default=1024, type=int, help='Input batch size on each device (default: 32)')
+    parser.add_argument('snapshot_path', default="./snapshot/snapshot.pt", type=str, help='Path to save the training snapshots')
     args = parser.parse_args()
 
 
     begin=time.time()
-    main(args.save_every, args.total_epochs, args.batch_size)
+    main(args.path_train_dataframe, args.total_epochs, args.batch_size, args.snapshot_path)
     end = time.time()
     print('total time', (end-begin)/60, 'minutes')
