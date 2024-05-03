@@ -1,7 +1,7 @@
 # Welcome to CASBI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation Status](https://readthedocs.org/projects/CASBI/badge/)](https://CASBI.readthedocs.io/)
+[![Documentation Status](https://readthedocs.org/projects/casbi/badge/?version=latest)](https://casbi.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/vepe99/CASBI/branch/main/graph/badge.svg)](https://codecov.io/gh/vepe99/CASBI)
 
 ## Installation
