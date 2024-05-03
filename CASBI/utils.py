@@ -17,6 +17,7 @@ from tqdm.notebook import tqdm
 ===========================================================================
 GENERATION OF THE FILEs OF OBSERVATIONS AND PARAMETERS FOR THE TRAINING SET
 ===========================================================================
+In this section we define the functions to extract the parameters and observables from the simulation snapshots and save them in .npz files.
 """
 def extract_parameter_array(sim_path='str', file_path='str') -> None:
     """
