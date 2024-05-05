@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 import scipy.stats as stats
 from scipy.stats import gaussian_kde
 from scipy.special import kl_div
@@ -180,11 +183,18 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False) -> pd.Data
     df (pandas.DataFrame): 
         The input dataframe to be rescale.
     mean_and_std_path (str): 
-        The path to the .parquet file with the mean and standard deviation of the columns of the dataframe.
+        The path to the directory where the .parquet file with the mean and standard deviation of the columns of the dataframe will be saved if save=True.
+        Otherwise, if the is already been created, it the path to the file itself.
+    inverse (bool):
+        If True, the rescaling is reverted.
+    save (bool):
+        If True, the mean and standard deviation of the columns of the dataframe are saved in a .parquet file in the mean_and_std_path directory.
+        Otherwise, the mean and standard deviation are loaded from the mean_and_std_path file.
         
     Returns:
     df (pandas.DataFrame): 
-        The dataframe with the observables data rescaled.
+        The dataframe with the observables data rescaled. If save=True all the columns are rescaled and the mean and standard deviation are saved in the mean_and_std_path directory.
+        Otherwise only the observables columns are rescaled.
 
     """
     if save == True:
@@ -194,19 +204,19 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False) -> pd.Data
             columns.append(f'std_{col}')
         mean_and_std = pd.DataFrame(columns=columns)
         mean_and_std.to_parquet(mean_and_std_path + 'mean_and_std.parquet')
-        mean = mean_and_std.loc[0, f'mean_{col}'] 
-        std  = mean_and_std.loc[0, f'std_{col}'] 
         df.apply(lambda x: (x.to_numpy() - x.to_numpy().mean()) / x.to_numpy().std(), axis=0)
         
     else:
-        mean_and_std = pd.read_parquet(mean_and_std_path + 'mean_and_std.parquet')    
-        mean = mean_and_std.loc[0, f'mean_{col}'] 
-        std  = mean_and_std.loc[0, f'std_{col}'] 
+        mean_and_std = pd.read_parquet(mean_and_std_path)    
         if inverse==True:
             for col in df.columns[:2]:   
+                mean = mean_and_std.loc[0, f'mean_{col}'] 
+                std  = mean_and_std.loc[0, f'std_{col}'] 
                 df[col] = df[col]*std + mean
         else:
             for col in df.columns[:2]:   
+                mean = mean_and_std.loc[0, f'mean_{col}'] 
+                std  = mean_and_std.loc[0, f'std_{col}'] 
                 df[col] = (df[col] - mean) / std
     return df
 
