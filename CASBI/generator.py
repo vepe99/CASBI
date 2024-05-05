@@ -528,7 +528,7 @@ class NF_condGLOW(nn.Module):
             
         return y, logdet
     
-    def sample_Flow(self, number, x_cond):
+    def sample_Flow(self, number, x_cond, inverse_rescale_file):
         """Samples from the prior and transforms the samples with the flow.
         
         Parameters
@@ -538,10 +538,12 @@ class NF_condGLOW(nn.Module):
             The number of samples to draw. If a condition is given, the number of samples must be the same as the length of conditions.
         x_cond : torch.Tensor
             The condition for the samples. If dim_cond=0 enter torch.Tensor([]).
+        inverse_rescale_file : str
+            The file where the mean and std for the rescaling are stored.
         """
         samples = self.backward( self.prior.sample(torch.Size((number,))), torch.from_numpy(x_cond).to(self.device) )[0]
         
-        mean_and_std = pd.read_parquet('../../data/preprocessing_subsample/mean_and_std_preprocessing.parquet')
+        mean_and_std = pd.read_parquet(inverse_rescale_file)
         samples[:, 0] = samples[:, 0]*torch.from_numpy(mean_and_std['std_feh'].values).to(self.device) + torch.from_numpy( mean_and_std['mean_feh'].values).to(self.device)
         samples[:, 1] = samples[:, 1]*torch.from_numpy(mean_and_std['std_ofe'].values).to(self.device) + torch.from_numpy(mean_and_std['mean_ofe'].values).to(self.device)
         
