@@ -16,6 +16,8 @@ import re
 from tqdm.notebook import tqdm
 from .generator import *
 
+import ndtest
+
 
 """
 GENERATION OF THE FILEs OF OBSERVATIONS AND PARAMETERS FOR THE TRAINING SET
@@ -402,7 +404,28 @@ METRIC TEST
 
 """
 
-def get_test_metric(test_df:pd.DataFrame, model:torch.nn.Module):
+
+def create_sample_df(df_to_sample, Flow, inverse_rescale_file):
+    
+    other_cols = df_to_sample.columns.difference(['Galaxy_name'])
+    df = pd.DataFrame(columns=df_to_sample.columns)
+    with torch.no_grad():
+        Flow.eval()
+        for galaxy in sorted(df_to_sample['Galaxy_name'].unique()):    
+            galaxy_data = df_to_sample[df_to_sample['Galaxy_name']==galaxy]
+            generated_data = Flow.sample_Flow(len(galaxy_data), galaxy_data[other_cols].values[0,2:], inverse_rescale_file=inverse_rescale_file).cpu().detach()
+            generated_data = pd.DataFrame(generated_data.numpy(), columns=['feh', 'ofe'])
+            generated_data['Galaxy_name'] = galaxy
+            for col in galaxy_data.columns[2:-1]:
+                generated_data[col] = galaxy_data[col].values[0]
+            df = pd.concat([df, generated_data])
+    return df
+
+    
+def kl_divergence(p, q):
+ return sum(p[i] * np.log2(p[i]/q[i]) for i in range(len(p)))
+
+def get_test_metric(test_df:pd.DataFrame, df_sample, model:torch.nn.Module, inverse=False, inverse_rescale_file=None):
     """
     Return the KL and JS divergence between the KDE of the true data and the generated data for the test set.
     
@@ -425,22 +448,30 @@ def get_test_metric(test_df:pd.DataFrame, model:torch.nn.Module):
     bad_column = ['Galaxy_name']
     other_columns = test_df.columns.difference(bad_column, sort=False)
     
-    kde_value = np.zeros(500*len(test_df['Galaxy_name'].unique()))
-    flow_pdf = np.zeros(500*len(test_df['Galaxy_name'].unique()))
+    kl_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
+    js_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
+    D = np.zeros(len(test_df['Galaxy_name'].unique()))
     i = 0
-    for galaxy in test_df['Galaxy_name'].unique():
+    for galaxy in tqdm(sorted(test_df['Galaxy_name'].unique())):
         galaxy_data = test_df[test_df['Galaxy_name']==galaxy]
         x = galaxy_data['feh']
         y = galaxy_data['ofe']
         kde = gaussian_kde(np.vstack([x, y]))
-        kde_value[i*500:(i+1)*500] = kde.evaluate(np.vstack([x.to_numpy(), y.to_numpy()]))
-        flow_pdf[i*500:(i+1)*500]  = model.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float))
-        i+=1
+        kde_value = kde.evaluate(np.vstack([x.to_numpy(), y.to_numpy()]))
+        flow_pdf  = model.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float), inverse=inverse, inverse_rescale_file=inverse_rescale_file)
+        kl_div_all[i] = kl_divergence(kde_value, flow_pdf)
+        js_div_all[i]  = js_div(kde_value, flow_pdf)
         
-    kl_div_value = kl_div(kde_value, flow_pdf)
-    js_div_value = js_div(kde_value, flow_pdf)
+        sample_data = df_sample[df_sample['Galaxy_name']==galaxy]
+        x_s = sample_data['feh']
+        y_s = sample_data['ofe']
+        P, D[i] = ndtest.ks2d2s(x_s.to_numpy(), y_s.to_numpy(), x.to_numpy(), y.to_numpy(), extra=True)
+        i+=1
     
-    return kl_div_value, js_div_value
+    kl_div_mean = np.mean(kl_div_all)
+    js_div_mean = np.mean(js_div_all)
+    D_mean = np.mean(D)
+    return kl_div_mean, js_div_mean, D_mean
 
 """
 ================================================================================
@@ -449,12 +480,16 @@ PLOT FUNCTION
 
 
 """
-def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, levels=5,):
+def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse_rescale_file, nll: float, kl_mean: float, js_mean:float, D_mean:float, levels=5,):
     """
     
     
     
     """
+    test_df['Data'] = 'test'
+    df_sample['Data'] = 'sample'
+    df_joinplot = pd.concat([test_df, df_sample])
+    
     fig, ax = plt.subplots(2, 2, figsize=(6, 6), 
                         gridspec_kw={"height_ratios": (.15, .85), 
                                     "width_ratios": (.85, .15)})
@@ -462,12 +497,25 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
 
     colors = [['red'], ['black']]
     patches = []
-
-    for i, data_type in enumerate(df_joinplot['Data'].unique()):
+    
+    for i, data_type in enumerate(['test', 'sample']):
         # plot kde for data_type in ['simulation', 'generated']
         x = df_joinplot['feh'][df_joinplot['Data'] == data_type]
         y = df_joinplot['ofe'][df_joinplot['Data'] == data_type]
-
+        
+        if data_type == 'test':
+            x_t = x
+            y_t = y
+            kde = gaussian_kde(np.vstack([x_t, y_t]))
+            kde_value = kde.evaluate(np.vstack([x_t.to_numpy(), y_t.to_numpy()]))
+            other_columns = test_df.columns.difference(['Galaxy_name', 'Data'], sort=False)
+            flow_pdf  = Flow.get_pdf(df_sample[other_columns].values[:, :2].astype(float), df_sample[other_columns].values[0, 2:].astype(float), inverse=False, inverse_rescale_file=inverse_rescale_file)
+            kl_div_galaxy = kl_divergence(kde_value, flow_pdf)
+            js_div_galaxy  = js_div(kde_value, flow_pdf)
+            
+            
+        if data_type == 'sample':
+            P, D_galaxy = ndtest.ks2d2s(x_t.to_numpy(), y_t.to_numpy(), x.to_numpy(), y.to_numpy(), extra=True)
     
         # Calculate 2D KDE
         kde = gaussian_kde(np.vstack([x, y]))
@@ -480,7 +528,7 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
 
         # Plot 2D KDE
         contour = ax[1, 0].contour(X, Y, Z.reshape(X.shape), levels=levels,  alpha=0.7, colors=colors[i])
-        
+
         # Create a patch for the legend
         patches.append(mpatches.Patch(color=contour.collections[0].get_edgecolor(), label=data_type))
         
@@ -508,7 +556,10 @@ def custom_kde_plot(df_joinplot: pd.DataFrame, nll: float, kl: float, js:float, 
         
         
         # Add the legend
-        ax[1, 0].legend(title=f'Galaxy: {galaxy} \n nll: {nll[0]:.2f} \n kl:{kl[0]:.2f} \n js:{js:.2f}', handles=patches, loc='lower left')
+        ax[1, 0].legend(handles=patches, loc='lower left')
+        if data_type == 'sample':
+            text_to_show = f'Galaxy: {df_joinplot["Galaxy_name"].unique()[0]} \n nll: {nll[0]:.2f} \n  kl_mean:{kl_mean:.2f}, kl_g:{kl_div_galaxy:.2f} \n js_mean:{js_mean:.2f}, js_g:{js_div_galaxy:.2f} \n D_mean: {D_mean:.2f},  D_g:{D_galaxy:.2f} '
+            ax[1, 0].text(0, 1, text_to_show, verticalalignment='top', horizontalalignment='left', transform=ax[1, 0].transAxes)
 
 
 """

@@ -556,7 +556,7 @@ class NF_condGLOW(nn.Module):
         self.prior = torch.distributions.Normal(torch.zeros(self.dim_notcond).to(device), torch.ones(self.dim_notcond).to(device))
         return self
     
-    def get_pdf(self, x, x_cond):
+    def get_pdf(self, x, x_cond, inverse=False, inverse_rescale_file=None):
         """Returns the probability density function of the flow at the given point.
         
         Parameters
@@ -568,6 +568,10 @@ class NF_condGLOW(nn.Module):
             The condition for the point.
         """
         x = torch.from_numpy(x).to(self.device)
+        if inverse == True: 
+            mean_and_std = pd.read_parquet(inverse_rescale_file)
+            x[:, 0] = (x[:, 0] - torch.from_numpy(mean_and_std['mean_feh'].values).to(self.device))/torch.from_numpy(mean_and_std['std_feh'].values).to(self.device)
+            x[:, 1] = (x[:, 1] - torch.from_numpy(mean_and_std['mean_ofe'].values).to(self.device))/torch.from_numpy(mean_and_std['std_ofe'].values).to(self.device)
         x_cond = torch.from_numpy(x_cond).to(self.device)
         z, logdet, prior_z_logprob = self.forward(x, x_cond)
         pdf = torch.exp(prior_z_logprob + logdet)
