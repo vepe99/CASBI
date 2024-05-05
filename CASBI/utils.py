@@ -169,30 +169,8 @@ def gen_files(sim_path: str, file_path: str) -> None:
 GENERATION OF THE DATAFRAME 
 
 """
-def rescale(df, mean_and_std_path = str) -> pd.DataFrame:
-    '''
-    Rescale the data in the dataframe by removing to each column the mean and dividing by the standard deviation.
-    Mean and standard deviation are stored in a .parqet dataframe to revert the normalization during inference
 
-    Parameters:
-    df (pandas.DataFrame): The input dataframe to be rescale.
-    mean_and_std_path (str): The path to the .parquet file with the mean and standard deviation of the columns of the dataframe.
-    
-    Returns:
-    None
-    '''
-    columns = []
-    for col in df.columns:
-        columns.append(f'mean_{col}')
-        columns.append(f'std_{col}')
-    mean_and_std = pd.DataFrame(columns=columns)
-    for col in df.columns:
-        mean_and_std.loc[0, f'mean_{col}'] = df[col].mean()
-        mean_and_std.loc[0, f'std_{col}'] = df[col].std()   
-    mean_and_std.to_parquet(mean_and_std_path + 'mean_and_std.parquet')    
-    return df.apply(lambda x: (x.to_numpy() - x.to_numpy().mean()) / x.to_numpy().std(), axis=0)
-
-def inverse_rescale(df, mean_and_std_file = str) -> pd.DataFrame:
+def rescale(df, mean_and_std_path = str, inverse=False, save = False) -> pd.DataFrame:
     """
     Revert the scaling of the data in the dataframe by adding to each column the mean and multiplying by the standard deviation for the observables.
     The mean and standard deviation are stored in the .parquet file created during the creation of the original dataframe.
@@ -201,7 +179,7 @@ def inverse_rescale(df, mean_and_std_file = str) -> pd.DataFrame:
     Parameters:
     df (pandas.DataFrame): 
         The input dataframe to be rescale.
-    mean_and_std_file (str): 
+    mean_and_std_path (str): 
         The path to the .parquet file with the mean and standard deviation of the columns of the dataframe.
         
     Returns:
@@ -209,11 +187,27 @@ def inverse_rescale(df, mean_and_std_file = str) -> pd.DataFrame:
         The dataframe with the observables data rescaled.
 
     """
-    mean_and_std = pd.read_parquet(mean_and_std_file)
-    for col in df.columns[:2]:
+    if save == True:
+        columns = []
+        for col in df.columns:
+            columns.append(f'mean_{col}')
+            columns.append(f'std_{col}')
+        mean_and_std = pd.DataFrame(columns=columns)
+        mean_and_std.to_parquet(mean_and_std_path + 'mean_and_std.parquet')
         mean = mean_and_std.loc[0, f'mean_{col}'] 
-        std  = mean_and_std.loc[0, f'std_{col}']    
-        df[col] = df[col]*std + mean
+        std  = mean_and_std.loc[0, f'std_{col}'] 
+        df.apply(lambda x: (x.to_numpy() - x.to_numpy().mean()) / x.to_numpy().std(), axis=0)
+        
+    else:
+        mean_and_std = pd.read_parquet(mean_and_std_path + 'mean_and_std.parquet')    
+        mean = mean_and_std.loc[0, f'mean_{col}'] 
+        std  = mean_and_std.loc[0, f'std_{col}'] 
+        if inverse==True:
+            for col in df.columns[:2]:   
+                df[col] = df[col]*std + mean
+        else:
+            for col in df.columns[:2]:   
+                df[col] = (df[col] - mean) / std
     return df
 
 
@@ -331,7 +325,7 @@ def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file_path:str, 
     
     bad_column = 'Galaxy_name'
     other_cols = df.columns.difference([bad_column])    
-    df[other_cols] = rescale(df[other_cols], mean_and_std_path=preprocess_file_path.replace('preprocess_file.npz', '')) #nomalization must be then reverted during inference to get the correct results
+    df[other_cols] = rescale(df[other_cols], mean_and_std_path=preprocess_file_path.replace('preprocess_file.npz', ''), save=True) #nomalization must be then reverted during inference to get the correct results
     df.to_parquet(dataframe_path + 'dataframe.parquet')
     
     return df 
@@ -398,7 +392,7 @@ METRIC TEST
 
 """
 
-def get_test_metrice(test_df:pd.DataFrame):
+def get_test_metric(test_df:pd.DataFrame, model:torch.nn.Module):
     """
     Return the KL and JS divergence between the KDE of the true data and the generated data for the test set.
     
@@ -406,6 +400,9 @@ def get_test_metrice(test_df:pd.DataFrame):
     ----------
     test_df : pd.DataFrame
         The test set dataframe.
+    
+    model: torch.nn.Module
+        The model used to generate the data.
     
     Returns
     -------
@@ -415,6 +412,9 @@ def get_test_metrice(test_df:pd.DataFrame):
         The JS divergence between the KDE of the true data and the generated data.
     """
     
+    bad_column = ['Galaxy_name']
+    other_columns = test_df.columns.difference(bad_column, sort=False)
+    
     kde_value = np.zeros(500*len(test_df['Galaxy_name'].unique()))
     flow_pdf = np.zeros(500*len(test_df['Galaxy_name'].unique()))
     i = 0
@@ -423,8 +423,8 @@ def get_test_metrice(test_df:pd.DataFrame):
         x = galaxy_data['feh']
         y = galaxy_data['ofe']
         kde = gaussian_kde(np.vstack([x, y]))
-        kde_value[i*500:(i+1)*500] = kde.evaluate(np.vstack([x.ravel(), y.ravel()]))
-        flow_pdf[i*500:(i+1)*500]  = Flow.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float))
+        kde_value[i*500:(i+1)*500] = kde.evaluate(np.vstack([x.to_numpy(), y.to_numpy()]))
+        flow_pdf[i*500:(i+1)*500]  = model.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float))
         i+=1
         
     kl_div_value = kl_div(kde_value, flow_pdf)
