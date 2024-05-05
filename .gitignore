@@ -142,4 +142,4 @@ cython_debug/
 *.pth
 
 # tensorboard event file
-event.out
+events.out.tfevents.*
