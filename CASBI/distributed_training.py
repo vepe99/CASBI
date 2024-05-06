@@ -102,7 +102,7 @@ class Trainer:
 
     def _run_batch(self, source, train=True):
         if train==True:
-            mask_cond = np.ones(14).astype(bool)
+            mask_cond = np.ones(13).astype(bool)
             mask_cond[:2] = np.array([0, 0]).astype(bool)
             #Evaluate model
             z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
@@ -119,7 +119,7 @@ class Trainer:
             return loss.item()
         else:
             with torch.no_grad():
-                mask_cond = np.ones(14).astype(bool)
+                mask_cond = np.ones(13).astype(bool)
                 mask_cond[:2] = np.array([0, 0]).astype(bool)
                 #Evaluate model
                 z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
@@ -135,7 +135,7 @@ class Trainer:
         train_loss = 0.
         for source in self.train_data:
             source = source.to(self.gpu_id)
-            train_loss += self._run_batch(source, train=True)/len(self.train_data)
+            train_loss += self._run_batch(source, train=True, )/len(self.train_data)
         
         self.val_data.sampler.set_epoch(epoch)    
         dist.barrier()
@@ -223,7 +223,8 @@ def get_even_space_sample(df_mass_masked):
     
     
 def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
-    train_set = pd.read_parquet(path_train_dataframe) # load your dataset
+    train_set = pd.read_parquet(path_train_dataframe)
+    train_set = train_set[train_set.columns.difference(['a'], sort=False)] # load your dataset
     # Galax_name = train_set['Galaxy_name'].unique()
     # test_galaxy = np.random.choice(Galax_name, int(len(Galax_name)*0.1), replace=False)
     # test_set = train_set[train_set['Galaxy_name'].isin(test_galaxy)]
@@ -259,7 +260,7 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     test_set = torch.from_numpy(test_set.values)
     val_set = torch.from_numpy(val_set.values)
     train_set = torch.from_numpy(train_set.values)
-    model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 6, 0.2])  # load your model
+    model = NF_condGLOW(12, dim_notcond=2, dim_cond=11, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     return train_set, val_set, test_set, model, optimizer     
 
@@ -296,7 +297,7 @@ if __name__ == "__main__":
     parser.add_argument('path_train_dataframe', type=str, help='Path to the training dataframe in parquet format')
     parser.add_argument('test_and_nll_path', type=str, help='Path to save the test set and the negative log likelihood')
     parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-    parser.add_argument('batch_size', default=1024, type=int, help='Input batch size on each device (default: 32)')
+    parser.add_argument('batch_size', default=256, type=int, help='Input batch size on each device (default: 32)')
     parser.add_argument('snapshot_path', default="./snapshot/snapshot.pt", type=str, help='Path to save the training snapshots')
     args = parser.parse_args()
 
