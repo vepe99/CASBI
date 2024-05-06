@@ -7,7 +7,7 @@ import time
 import os
 import re
 import itertools
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 import torch
 import torch.nn as nn
@@ -130,7 +130,7 @@ class Trainer:
 
     def _run_epoch(self, epoch):
         b_sz = self.train_data.batch_size
-        print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
+        # print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
         self.train_data.sampler.set_epoch(epoch) # shuffle data
         train_loss = 0.
         for source in self.train_data:
@@ -170,11 +170,19 @@ class Trainer:
         print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
 
     def train(self, max_epochs: int):
-        for epoch in range(self.epochs_run, max_epochs):
-            val_running_loss = self._run_epoch(epoch)
-            if val_running_loss < self.best_loss and self.gpu_id == 0 :  
-                self.best_loss = val_running_loss
-                self._save_checkpoint(epoch)
+        if self.gpu_id == 0:
+            for epoch in tqdm(range(self.epochs_run, max_epochs)):
+                val_running_loss = self._run_epoch(epoch)
+                if val_running_loss < self.best_loss and self.gpu_id == 0 :  
+                    self.best_loss = val_running_loss
+                    self._save_checkpoint(epoch)
+        else:
+            for epoch in range(self.epochs_run, max_epochs):
+                val_running_loss = self._run_epoch(epoch)
+                if val_running_loss < self.best_loss and self.gpu_id == 0 :  
+                    self.best_loss = val_running_loss
+                    self._save_checkpoint(epoch)
+            
     
     def test(self, test_set):
         '''
@@ -288,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument('path_train_dataframe', type=str, help='Path to the training dataframe in parquet format')
     parser.add_argument('test_and_nll_path', type=str, help='Path to save the test set and the negative log likelihood')
     parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-    parser.add_argument('--batch_size', default=1024, type=int, help='Input batch size on each device (default: 32)')
+    parser.add_argument('batch_size', default=1024, type=int, help='Input batch size on each device (default: 32)')
     parser.add_argument('snapshot_path', default="./snapshot/snapshot.pt", type=str, help='Path to save the training snapshots')
     args = parser.parse_args()
 

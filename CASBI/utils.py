@@ -584,6 +584,7 @@ def distributed_training(path_train_dataframe: str,
                          test_and_nll_path: str,
                          world_size: int, 
                          number_of_epochs:int, 
+                         batch_size:int,
                          snapshot_path='snapshot/snapshot.pth',):
     """
     Function to lunch the bash script torchrun to train the model in a distributed way.
@@ -603,7 +604,7 @@ def distributed_training(path_train_dataframe: str,
     """
     script_dir = os.path.dirname(os.path.realpath(__file__))
     script_path = os.path.join(script_dir, "distributed_training.py")
-    command = f"torchrun --standalone --nproc_per_node={world_size} {script_path} {path_train_dataframe} {test_and_nll_path} {number_of_epochs} {snapshot_path}"
+    command = f"torchrun --standalone --nproc_per_node={world_size} {script_path} {path_train_dataframe} {test_and_nll_path} {number_of_epochs} {batch_size} {snapshot_path}"
     try:
         subprocess.run(command, shell=True, check=True)
     except subprocess.CalledProcessError as e:
