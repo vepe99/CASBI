@@ -96,7 +96,9 @@ class Trainer:
         snapshot = torch.load(snapshot_path, map_location=loc)
         self.model.load_state_dict(snapshot["MODEL_STATE"])
         self.epochs_run = snapshot["EPOCHS_RUN"]
-        print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
+        self.optimizer.load_state_dict(snapshot["OPTIMIZER_STATE"])
+        if os.environ["RANK"] == 0:
+            print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
 
     def _run_batch(self, source, train=True):
         if train==True:
@@ -162,6 +164,7 @@ class Trainer:
         snapshot = {
             "MODEL_STATE": self.model.module.state_dict(),
             "EPOCHS_RUN": epoch,
+            "OPTIMIZER_STATE": self.optimizer.state_dict(),
         }
         torch.save(snapshot, self.snapshot_path)
         print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
@@ -206,8 +209,8 @@ def get_even_space_sample(df_mass_masked):
     for t in time:
         temp = df_mass_masked[df_mass_masked['infall_time']==t]
         galaxy_temp = temp.sample(1)['Galaxy_name'].values[0]
-        df_time = pd.concat((df_time, df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]) )
-
+        df_galaxy = df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]
+        df_time = pd.concat([df_time, df_galaxy])
     return df_time
     
     
@@ -239,16 +242,17 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     test_set.to_parquet(f'{test_and_nll_path}test_set.parquet')
     
     train_set = train_set[~train_set['Galaxy_name'].isin(test_set['Galaxy_name'])]
-    print('finish prepare data')
+    if os.environ["RANK"] == 0:
+        print('finish prepare data')
     #remove the column Galaxy name before passing it to the model
     test_set = test_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     train_set = train_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     val_set = val_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     test_set = torch.from_numpy(test_set.values)
-    val_set =torch.from_numpy(val_set.values)
+    val_set = torch.from_numpy(val_set.values)
     train_set = torch.from_numpy(train_set.values)
-    model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
+    model = NF_condGLOW(12, dim_notcond=2, dim_cond=12, CL=NSF_CL2, network_args=[256, 6, 0.2])  # load your model
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     return train_set, val_set, test_set, model, optimizer     
 
 def prepare_dataloader(dataset, batch_size: int):
