@@ -167,7 +167,7 @@ class Trainer:
             "OPTIMIZER_STATE": self.optimizer.state_dict(),
         }
         torch.save(snapshot, self.snapshot_path)
-        print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
+        # print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
 
     def train(self, max_epochs: int):
         if self.gpu_id == 0:
