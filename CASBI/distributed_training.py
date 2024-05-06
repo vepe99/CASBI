@@ -257,7 +257,7 @@ def prepare_dataloader(dataset, batch_size: int):
         batch_size=batch_size,
         pin_memory=True,
         shuffle=False,
-        sampler=DistributedSampler(dataset))
+        sampler=DistributedSampler(dataset, shuffle=True,))
 
 def main(path_train_dataframe: str, 
          test_and_nll_path: str,

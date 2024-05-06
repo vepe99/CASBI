@@ -468,6 +468,17 @@ def get_test_metric(test_df:pd.DataFrame, df_sample, model:torch.nn.Module, inve
         P, D[i] = ndtest.ks2d2s(x_s.to_numpy(), y_s.to_numpy(), x.to_numpy(), y.to_numpy(), extra=True)
         i+=1
     
+    fig = plt.figure(figsize=(15, 5))
+    ax = fig.add_subplot(131)
+    ax.hist(kl_div_all, bins=20)
+    ax.set_xlabel('KL divergence')
+    ax = fig.add_subplot(132)
+    ax.hist(js_div_all, bins=20)
+    ax.set_xlabel('JS divergence')
+    ax = fig.add_subplot(133)
+    ax.hist(D, bins=20)
+    ax.set_xlabel('D statistic')
+    
     kl_div_mean = np.mean(kl_div_all)
     js_div_mean = np.mean(js_div_all)
     D_mean = np.mean(D)
@@ -480,14 +491,14 @@ PLOT FUNCTION
 
 
 """
-def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse_rescale_file, nll: float, kl_mean: float, js_mean:float, D_mean:float, levels=5,):
+def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse, inverse_rescale_file, nll: float, kl_mean: float, js_mean:float, D_mean:float, levels=5,):
     """
     
     
     
     """
-    test_df['Data'] = 'test'
-    df_sample['Data'] = 'sample'
+    test_df.insert(len(test_df.columns), 'Data', 'test')
+    df_sample.insert(len(df_sample.columns), 'Data', 'sample')
     df_joinplot = pd.concat([test_df, df_sample])
     
     fig, ax = plt.subplots(2, 2, figsize=(6, 6), 
@@ -509,7 +520,7 @@ def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse_rescale_file
             kde = gaussian_kde(np.vstack([x_t, y_t]))
             kde_value = kde.evaluate(np.vstack([x_t.to_numpy(), y_t.to_numpy()]))
             other_columns = test_df.columns.difference(['Galaxy_name', 'Data'], sort=False)
-            flow_pdf  = Flow.get_pdf(df_sample[other_columns].values[:, :2].astype(float), df_sample[other_columns].values[0, 2:].astype(float), inverse=False, inverse_rescale_file=inverse_rescale_file)
+            flow_pdf  = Flow.get_pdf(test_df[other_columns].values[:, :2].astype(float), test_df[other_columns].values[0, 2:].astype(float), inverse=inverse, inverse_rescale_file=inverse_rescale_file)
             kl_div_galaxy = kl_divergence(kde_value, flow_pdf)
             js_div_galaxy  = js_div(kde_value, flow_pdf)
             
@@ -556,11 +567,13 @@ def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse_rescale_file
         
         
         # Add the legend
-        ax[1, 0].legend(handles=patches, loc='lower left')
+        ax[1, 0].legend(title= f'{df_joinplot["Galaxy_name"].unique()[0]} \nNLL: {nll[0]:.2f}', handles=patches, loc='lower left')
         if data_type == 'sample':
-            text_to_show = f'Galaxy: {df_joinplot["Galaxy_name"].unique()[0]} \n nll: {nll[0]:.2f} \n  kl_mean:{kl_mean:.2f}, kl_g:{kl_div_galaxy:.2f} \n js_mean:{js_mean:.2f}, js_g:{js_div_galaxy:.2f} \n D_mean: {D_mean:.2f},  D_g:{D_galaxy:.2f} '
-            ax[1, 0].text(0, 1, text_to_show, verticalalignment='top', horizontalalignment='left', transform=ax[1, 0].transAxes)
+            text_to_show = f'$\overline{{KL}}$:{kl_mean:.1e}, $KL_g$:{kl_div_galaxy:.1e}' + '\n' + f'$\overline{{JS}}$:{js_mean:.2f}, $JS_g$:{js_div_galaxy:.2f}'+ '\n' + f' $\overline{{D}}$: {D_mean:.2f},  $D_g$:{D_galaxy:.2f} '
+            ax[1, 0].text(0.05, 0.95, text_to_show, verticalalignment='top', horizontalalignment='left', transform=ax[1, 0].transAxes, bbox=dict(boxstyle="round",facecolor='none'))
 
+    test_df = test_df.drop(columns=['Data'])
+    df_sample = df_sample.drop(columns=['Data'])
 
 """
 ====================
