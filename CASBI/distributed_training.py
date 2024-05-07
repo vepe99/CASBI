@@ -104,6 +104,7 @@ class Trainer:
         if train==True:
             mask_cond = np.ones(13).astype(bool)
             mask_cond[:2] = np.array([0, 0]).astype(bool)
+            mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
             #Evaluate model
             z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
             
@@ -121,6 +122,7 @@ class Trainer:
             with torch.no_grad():
                 mask_cond = np.ones(13).astype(bool)
                 mask_cond[:2] = np.array([0, 0]).astype(bool)
+                mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
                 #Evaluate model
                 z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
                 
@@ -130,21 +132,22 @@ class Trainer:
 
     def _run_epoch(self, epoch):
         b_sz = self.train_data.batch_size
-        # print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
+        print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
         self.train_data.sampler.set_epoch(epoch) # shuffle data
-        train_loss = 0.
+        train_loss = 0
         for source in self.train_data:
             source = source.to(self.gpu_id)
-            train_loss += self._run_batch(source, train=True, )/len(self.train_data)
+            train_loss += self._run_batch(source, train=True)/len(self.train_data)
         
         self.val_data.sampler.set_epoch(epoch)    
         dist.barrier()
         self.model.eval()
-        val_running_loss = 0.
-        for source in self.val_data:
-            source = source.to(self.gpu_id)
-            batch_loss = self._run_batch(source, train=False)
-            val_running_loss += batch_loss/len(self.val_data)
+        with torch.no_grad():  
+            val_running_loss = 0.
+            for source in self.val_data:
+                source = source.to(self.gpu_id)
+                batch_loss = self._run_batch(source, train=False)
+                val_running_loss += batch_loss/len(self.val_data)
         dist.barrier()
         val_running_loss = torch.tensor([val_running_loss]).to(self.gpu_id)
         dist.all_reduce(val_running_loss, op=dist.ReduceOp.SUM)
@@ -167,11 +170,11 @@ class Trainer:
             "OPTIMIZER_STATE": self.optimizer.state_dict(),
         }
         torch.save(snapshot, self.snapshot_path)
-        # print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
+        print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
 
     def train(self, max_epochs: int):
         if self.gpu_id == 0:
-            for epoch in tqdm(range(self.epochs_run, max_epochs)):
+            for epoch in range(self.epochs_run, max_epochs):
                 val_running_loss = self._run_epoch(epoch)
                 if val_running_loss < self.best_loss and self.gpu_id == 0 :  
                     self.best_loss = val_running_loss
@@ -211,7 +214,7 @@ def get_even_space_sample(df_mass_masked):
     Given a dataframe of galaxy in a range of mass, it returns 10 equally infall time spaced samples  
     '''
     len_infall_time = len(df_mass_masked['infall_time'].unique())
-    index_val_time = np.linspace(0, len_infall_time-1, 10)
+    index_val_time = np.linspace(0, len_infall_time-1, 20)
     time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
     df_time = pd.DataFrame(columns=df_mass_masked.columns)
     for t in time:
@@ -261,7 +264,7 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     val_set = torch.from_numpy(val_set.values)
     train_set = torch.from_numpy(train_set.values)
     model = NF_condGLOW(12, dim_notcond=2, dim_cond=11, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.RAdam(model.parameters(), lr=1e-4)
     return train_set, val_set, test_set, model, optimizer     
 
 def prepare_dataloader(dataset, batch_size: int):
