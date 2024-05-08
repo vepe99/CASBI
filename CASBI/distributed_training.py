@@ -110,7 +110,6 @@ class Trainer:
             
             #Get loss
             loss = -torch.mean(logdet+prior_z_logprob) 
-        
             #Set gradients to zero
             self.optimizer.zero_grad()
             #Compute gradients
@@ -119,16 +118,15 @@ class Trainer:
             self.optimizer.step()
             return loss.item()
         else:
-            with torch.no_grad():
-                mask_cond = np.ones(source.shape[1]).astype(bool)
-                mask_cond[:2] = np.array([0, 0]).astype(bool)
-                mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
-                #Evaluate model
-                z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
-                
-                #Get loss
-                loss = -torch.mean(logdet+prior_z_logprob)
-                return loss.item()
+            mask_cond = np.ones(source.shape[1]).astype(bool)
+            mask_cond[:2] = np.array([0, 0]).astype(bool)
+            mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
+            #Evaluate model
+            z, logdet, prior_z_logprob = self.model(source[..., ~mask_cond], source[..., mask_cond])
+            
+            #Get loss
+            loss = -torch.mean(logdet+prior_z_logprob)
+            return loss.item()
 
     def _run_epoch(self, epoch):
         b_sz = self.train_data.batch_size
@@ -137,31 +135,29 @@ class Trainer:
         train_loss = 0
         for source in self.train_data:
             source = source.to(self.gpu_id)
-            train_loss += self._run_batch(source, train=True)/len(self.train_data)
+            train_loss += self._run_batch(source, train=True)/len(self.train_data)     
+        train_loss = torch.tensor([train_loss]).to(self.gpu_id)
         
         self.val_data.sampler.set_epoch(epoch)    
-        dist.barrier()
         self.model.eval()
-        with torch.no_grad():  
-            val_running_loss = 0.
+        val_running_loss = 0.
+        with torch.no_grad():
             for source in self.val_data:
                 source = source.to(self.gpu_id)
                 batch_loss = self._run_batch(source, train=False)
                 val_running_loss += batch_loss/len(self.val_data)
-        dist.barrier()
         val_running_loss = torch.tensor([val_running_loss]).to(self.gpu_id)
-        dist.all_reduce(val_running_loss, op=dist.ReduceOp.SUM)
         
-        train_loss =  torch.tensor([train_loss]).to(self.gpu_id)
+        dist.barrier()
+        dist.all_reduce(val_running_loss, op=dist.ReduceOp.SUM)    
         dist.all_reduce(train_loss, op=dist.ReduceOp.SUM)
-        
         if self.gpu_id == 0:
             self.logger.add_scalar("Loss/val", val_running_loss/int(os.environ["WORLD_SIZE"]), epoch) #the WORLD_SIZE is the number of GPUs
             self.logger.add_scalar("Loss/train", train_loss/int(os.environ["WORLD_SIZE"]), epoch) #the WORLD_SIZE is the number of GPUs
+        dist.barrier()
         
         self.model.train()
-        
-        return val_running_loss/2
+        return val_running_loss/int(os.environ["WORLD_SIZE"])
             
     def _save_checkpoint(self, epoch):
         snapshot = {
@@ -173,18 +169,11 @@ class Trainer:
         print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
 
     def train(self, max_epochs: int):
-        if self.gpu_id == 0:
-            for epoch in range(self.epochs_run, max_epochs):
-                val_running_loss = self._run_epoch(epoch)
-                if val_running_loss < self.best_loss and self.gpu_id == 0 :  
-                    self.best_loss = val_running_loss
-                    self._save_checkpoint(epoch)
-        else:
-            for epoch in range(self.epochs_run, max_epochs):
-                val_running_loss = self._run_epoch(epoch)
-                if val_running_loss < self.best_loss and self.gpu_id == 0 :  
-                    self.best_loss = val_running_loss
-                    self._save_checkpoint(epoch)
+        for epoch in range(self.epochs_run, max_epochs):
+            val_running_loss = self._run_epoch(epoch)
+            if val_running_loss < self.best_loss and self.gpu_id == 0 :  
+                self.best_loss = val_running_loss
+                self._save_checkpoint(epoch)
             
     
     def test(self, test_set):
@@ -214,14 +203,16 @@ def get_even_space_sample(df_mass_masked):
     Given a dataframe of galaxy in a range of mass, it returns 10 equally infall time spaced samples  
     '''
     len_infall_time = len(df_mass_masked['infall_time'].unique())
-    index_val_time = np.linspace(0, len_infall_time-1, 20)
+    index_val_time = np.linspace(0, len_infall_time-1, 10)
     time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
-    df_time = pd.DataFrame(columns=df_mass_masked.columns)
-    for t in time:
+    for i, t in enumerate(time):
         temp = df_mass_masked[df_mass_masked['infall_time']==t]
         galaxy_temp = temp.sample(1)['Galaxy_name'].values[0]
-        df_galaxy = df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]
-        df_time.loc[len(df_time):] = df_galaxy
+        if i == 0:
+            df_time = df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]
+        else:  
+            df_galaxy = df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]
+            df_time = pd.concat([df_time, df_galaxy], ignore_index=True)
     return df_time
     
     
@@ -231,8 +222,8 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     train_set = train_set[train_set.columns.difference(['redshift'], sort=False)]
     train_set = train_set[train_set.columns.difference(['mean_FeMassFrac'], sort=False)]
     train_set = train_set[train_set.columns.difference(['std_FeMassFrac'], sort=False)]
-    train_set = train_set[train_set.columns.difference(['mean_OxMassFrac'], sort=False)]
-    train_set = train_set[train_set.columns.difference(['std_OxMassFrac'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['mean_OMassFrac'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['std_OMassFrac'], sort=False)]
     # Galax_name = train_set['Galaxy_name'].unique()
     # test_galaxy = np.random.choice(Galax_name, int(len(Galax_name)*0.1), replace=False)
     # test_set = train_set[train_set['Galaxy_name'].isin(test_galaxy)]
@@ -245,10 +236,9 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     
     low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
     low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass])
-    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
+    intermediate_mass= get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
     high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
     val_set = pd.concat([low_mass, intermediate_mass, high_mass])
-    
     train_set = train_set[~train_set['Galaxy_name'].isin(val_set['Galaxy_name'])]
     
     low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
@@ -259,8 +249,6 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     test_set.to_parquet(f'{test_and_nll_path}test_set.parquet')
     
     train_set = train_set[~train_set['Galaxy_name'].isin(test_set['Galaxy_name'])]
-    if os.environ["RANK"] == 0:
-        print('finish prepare data')
     #remove the column Galaxy name before passing it to the model
     test_set = test_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     train_set = train_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
@@ -268,18 +256,19 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     test_set = torch.from_numpy(np.array(test_set.values, dtype=float))
     val_set = torch.from_numpy(np.array(val_set.values, dtype=float))
     train_set = torch.from_numpy(np.array(train_set.values, dtype=float))
+    print('finish prepare data')
     conditions = train_set.shape[1] - 2
-    model = NF_condGLOW(4, dim_notcond=2, dim_cond=conditions, CL=NSF_CL2, network_args=[64, 6, 0.2])  # load your model
-    optimizer = torch.optim.RAdam(model.parameters(), lr=1e-4)
+    model = NF_condGLOW(12, dim_notcond=2, dim_cond=conditions, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
+    optimizer = torch.optim.RAdam(model.parameters(), lr=1e-4*int((os.environ["WORLD_SIZE"])))
     return train_set, val_set, test_set, model, optimizer     
 
-def prepare_dataloader(dataset, batch_size: int, shuffle: bool):
+def prepare_dataloader(dataset, batch_size: int):
     return torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
         pin_memory=True,
         shuffle=False,
-        sampler=DistributedSampler(dataset, shuffle=shuffle,))
+        sampler=DistributedSampler(dataset))
 
 def main(path_train_dataframe: str, 
          test_and_nll_path: str,
@@ -289,9 +278,9 @@ def main(path_train_dataframe: str,
          ):
     ddp_setup()
     train_set, val_set, test_set, model, optimizer = load_train_objs(path_train_dataframe, test_and_nll_path)
-    train_data = prepare_dataloader(train_set, batch_size, shuffle=False)
-    val_data = prepare_dataloader(val_set, batch_size, shuffle=False)
-    test_data = prepare_dataloader(test_set, batch_size, shuffle=False)
+    train_data = prepare_dataloader(train_set, batch_size)
+    val_data = prepare_dataloader(val_set, batch_size)
+    test_data = prepare_dataloader(test_set, batch_size)
     trainer = Trainer(model, train_data, val_data, test_data, optimizer, snapshot_path)
     trainer.train(total_epochs)
     negative_log_likelihood = trainer.test(test_data)
