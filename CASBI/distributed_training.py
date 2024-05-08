@@ -102,7 +102,7 @@ class Trainer:
 
     def _run_batch(self, source, train=True):
         if train==True:
-            mask_cond = np.ones(13).astype(bool)
+            mask_cond = np.ones(source.shape[1]).astype(bool)
             mask_cond[:2] = np.array([0, 0]).astype(bool)
             mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
             #Evaluate model
@@ -120,7 +120,7 @@ class Trainer:
             return loss.item()
         else:
             with torch.no_grad():
-                mask_cond = np.ones(13).astype(bool)
+                mask_cond = np.ones(source.shape[1]).astype(bool)
                 mask_cond[:2] = np.array([0, 0]).astype(bool)
                 mask_cond = torch.from_numpy(mask_cond).to(self.gpu_id)
                 #Evaluate model
@@ -221,13 +221,18 @@ def get_even_space_sample(df_mass_masked):
         temp = df_mass_masked[df_mass_masked['infall_time']==t]
         galaxy_temp = temp.sample(1)['Galaxy_name'].values[0]
         df_galaxy = df_mass_masked[df_mass_masked['Galaxy_name']==galaxy_temp]
-        df_time = pd.concat([df_time, df_galaxy])
+        df_time.loc[len(df_time):] = df_galaxy
     return df_time
     
     
 def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     train_set = pd.read_parquet(path_train_dataframe)
     train_set = train_set[train_set.columns.difference(['a'], sort=False)] # load your dataset
+    train_set = train_set[train_set.columns.difference(['redshift'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['mean_FeMassFrac'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['std_FeMassFrac'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['mean_OxMassFrac'], sort=False)]
+    train_set = train_set[train_set.columns.difference(['std_OxMassFrac'], sort=False)]
     # Galax_name = train_set['Galaxy_name'].unique()
     # test_galaxy = np.random.choice(Galax_name, int(len(Galax_name)*0.1), replace=False)
     # test_set = train_set[train_set['Galaxy_name'].isin(test_galaxy)]
@@ -260,20 +265,21 @@ def load_train_objs(path_train_dataframe:str, test_and_nll_path:str):
     test_set = test_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     train_set = train_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
     val_set = val_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
-    test_set = torch.from_numpy(test_set.values)
-    val_set = torch.from_numpy(val_set.values)
-    train_set = torch.from_numpy(train_set.values)
-    model = NF_condGLOW(12, dim_notcond=2, dim_cond=11, CL=NSF_CL2, network_args=[256, 3, 0.2])  # load your model
+    test_set = torch.from_numpy(np.array(test_set.values, dtype=float))
+    val_set = torch.from_numpy(np.array(val_set.values, dtype=float))
+    train_set = torch.from_numpy(np.array(train_set.values, dtype=float))
+    conditions = train_set.shape[1] - 2
+    model = NF_condGLOW(4, dim_notcond=2, dim_cond=conditions, CL=NSF_CL2, network_args=[64, 6, 0.2])  # load your model
     optimizer = torch.optim.RAdam(model.parameters(), lr=1e-4)
     return train_set, val_set, test_set, model, optimizer     
 
-def prepare_dataloader(dataset, batch_size: int):
+def prepare_dataloader(dataset, batch_size: int, shuffle: bool):
     return torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
         pin_memory=True,
         shuffle=False,
-        sampler=DistributedSampler(dataset, shuffle=True,))
+        sampler=DistributedSampler(dataset, shuffle=shuffle,))
 
 def main(path_train_dataframe: str, 
          test_and_nll_path: str,
@@ -283,9 +289,9 @@ def main(path_train_dataframe: str,
          ):
     ddp_setup()
     train_set, val_set, test_set, model, optimizer = load_train_objs(path_train_dataframe, test_and_nll_path)
-    train_data = prepare_dataloader(train_set, batch_size)
-    val_data = prepare_dataloader(val_set, batch_size)
-    test_data = prepare_dataloader(test_set, batch_size)
+    train_data = prepare_dataloader(train_set, batch_size, shuffle=False)
+    val_data = prepare_dataloader(val_set, batch_size, shuffle=False)
+    test_data = prepare_dataloader(test_set, batch_size, shuffle=False)
     trainer = Trainer(model, train_data, val_data, test_data, optimizer, snapshot_path)
     trainer.train(total_epochs)
     negative_log_likelihood = trainer.test(test_data)
