@@ -28,6 +28,7 @@ classifiers = [
 dependencies = [
     "click",
     "matplotlib >= 3.7.1",
+    "ndtest",
     "numpy >= 1.26.4",
     "optuna == 3.6.0",
     "pandas >= 1.5.3", 
