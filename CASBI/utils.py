@@ -444,45 +444,47 @@ def get_test_metric(test_df:pd.DataFrame, df_sample, model:torch.nn.Module, inve
     js_div_value : float
         The JS divergence between the KDE of the true data and the generated data.
     """
+    with torch.no_grad():
+        model.eval()
     
-    bad_column = ['Galaxy_name']
-    other_columns = test_df.columns.difference(bad_column, sort=False)
-    
-    kl_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
-    js_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
-    D = np.zeros(len(test_df['Galaxy_name'].unique()))
-    i = 0
-    for galaxy in tqdm(sorted(test_df['Galaxy_name'].unique())):
-        galaxy_data = test_df[test_df['Galaxy_name']==galaxy]
-        x = galaxy_data['feh']
-        y = galaxy_data['ofe']
-        kde = gaussian_kde(np.vstack([x, y]))
-        kde_value = kde.evaluate(np.vstack([x.to_numpy(), y.to_numpy()]))
-        flow_pdf  = model.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float), inverse=inverse, inverse_rescale_file=inverse_rescale_file)
-        kl_div_all[i] = kl_divergence(kde_value, flow_pdf)
-        js_div_all[i]  = js_div(kde_value, flow_pdf)
+        bad_column = ['Galaxy_name']
+        other_columns = test_df.columns.difference(bad_column, sort=False)
         
-        sample_data = df_sample[df_sample['Galaxy_name']==galaxy]
-        x_s = sample_data['feh']
-        y_s = sample_data['ofe']
-        P, D[i] = ndtest.ks2d2s(x_s.to_numpy(), y_s.to_numpy(), x.to_numpy(), y.to_numpy(), extra=True)
-        i+=1
-    
-    fig = plt.figure(figsize=(15, 5))
-    ax = fig.add_subplot(131)
-    ax.hist(kl_div_all, bins=20)
-    ax.set_xlabel('KL divergence')
-    ax = fig.add_subplot(132)
-    ax.hist(js_div_all, bins=20)
-    ax.set_xlabel('JS divergence')
-    ax = fig.add_subplot(133)
-    ax.hist(D, bins=20)
-    ax.set_xlabel('D statistic')
-    
-    kl_div_mean = np.mean(kl_div_all)
-    js_div_mean = np.mean(js_div_all)
-    D_mean = np.mean(D)
-    return kl_div_mean, js_div_mean, D_mean
+        kl_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
+        js_div_all = np.zeros(len(test_df['Galaxy_name'].unique()))
+        D = np.zeros(len(test_df['Galaxy_name'].unique()))
+        i = 0
+        for galaxy in tqdm(sorted(test_df['Galaxy_name'].unique())):
+            galaxy_data = test_df[test_df['Galaxy_name']==galaxy]
+            x = galaxy_data['feh']
+            y = galaxy_data['ofe']
+            kde = gaussian_kde(np.vstack([x, y]))
+            kde_value = kde.evaluate(np.vstack([x.to_numpy(), y.to_numpy()]))
+            flow_pdf  = model.get_pdf(galaxy_data.values[:, :2].astype(float), galaxy_data[other_columns].values[0, 2:].astype(float), inverse=inverse, inverse_rescale_file=inverse_rescale_file)
+            kl_div_all[i] = kl_divergence(kde_value, flow_pdf)
+            js_div_all[i]  = js_div(kde_value, flow_pdf)
+            
+            sample_data = df_sample[df_sample['Galaxy_name']==galaxy]
+            x_s = sample_data['feh']
+            y_s = sample_data['ofe']
+            P, D[i] = ndtest.ks2d2s(x_s.to_numpy(), y_s.to_numpy(), x.to_numpy(), y.to_numpy(), extra=True)
+            i+=1
+        
+        fig = plt.figure(figsize=(15, 5))
+        ax = fig.add_subplot(131)
+        ax.hist(kl_div_all, bins=20)
+        ax.set_xlabel('KL divergence')
+        ax = fig.add_subplot(132)
+        ax.hist(js_div_all, bins=20)
+        ax.set_xlabel('JS divergence')
+        ax = fig.add_subplot(133)
+        ax.hist(D, bins=20)
+        ax.set_xlabel('D statistic')
+        
+        kl_div_mean = np.mean(kl_div_all)
+        js_div_mean = np.mean(js_div_all)
+        D_mean = np.mean(D)
+        return kl_div_mean, js_div_mean, D_mean
 
 """
 ================================================================================
@@ -497,8 +499,10 @@ def custom_kde_plot(test_df: pd.DataFrame, df_sample, Flow, inverse, inverse_res
     
     
     """
-    test_df.insert(len(test_df.columns), 'Data', 'test')
-    df_sample.insert(len(df_sample.columns), 'Data', 'sample')
+    if 'Data' not in test_df.columns:
+        test_df.insert(len(test_df.columns), 'Data', 'test')
+    if 'Data' not in df_sample.columns:
+        df_sample.insert(len(df_sample.columns), 'Data', 'sample')
     df_joinplot = pd.concat([test_df, df_sample])
     
     fig, ax = plt.subplots(2, 2, figsize=(6, 6), 
