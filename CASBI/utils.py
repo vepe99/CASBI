@@ -14,7 +14,7 @@ import os
 import subprocess
 import re
 from tqdm.notebook import tqdm
-from .generator import *
+from .generator.nf.generator import *
 
 import ndtest
 
