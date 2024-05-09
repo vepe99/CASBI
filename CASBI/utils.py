@@ -1,3 +1,4 @@
+import CASBI
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ import os
 import subprocess
 import re
 from tqdm.notebook import tqdm
-from .generator.nf.generator import *
+from CASBI.generator.nf.nf_model import *
 
 import ndtest
 
