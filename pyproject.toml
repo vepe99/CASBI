@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "click",
+    "lightning = 2.2.4", 
     "matplotlib >= 3.7.1",
     "ndtest",
     "numpy >= 1.26.4",
@@ -68,6 +69,9 @@ CASBI = "CASBI.__main__:main"
 [tool.setuptools]
 packages = [
     "CASBI",
+    "CASBI.generator",
+    "CASBI.generator.nf",
+    "CASBI.generator.fff",
 ]
 
 # The following is the configuration for the pytest test suite

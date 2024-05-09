@@ -1,4 +1,3 @@
-import CASBI
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,16 +7,20 @@ import scipy.stats as stats
 from scipy.stats import gaussian_kde
 from scipy.special import kl_div
 from scipy.spatial.distance import jensenshannon as js_div
-from multiprocessing import Pool
+import ndtest
+
+
 import pynbody as pb
 
 import os
 import subprocess
 import re
+from multiprocessing import Pool
 from tqdm.notebook import tqdm
-from CASBI.generator.nf.nf_model import *
 
-import ndtest
+import torch
+from CASBI.generator.nf.nf_model import NF_condGLOW
+
 
 
 """

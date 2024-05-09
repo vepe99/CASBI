@@ -2,8 +2,8 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
 
-from loss import  nll_surrogate
-import jacobian as jacobian
+from .loss import  nll_surrogate
+from .jacobian import compute_jacobian
 
 class SkipConnection(torch.nn.Module):
     def __init__(self, inner):
@@ -84,7 +84,7 @@ class FreeFormFlow(torch.nn.Module):
         return log_probability and the reconstructed x for the 
         """
         z = self.encoder(x, cond)
-        x1, jac_dec = jacobian.compute_jacobian(z, cond, self.decoder)
+        x1, jac_dec = compute_jacobian(z, cond, self.decoder)
         log_abs_jac_det = torch.linalg.slogdet(jac_dec).logabsdet
         log_prob = self.latent.log_prob(z) - log_abs_jac_det
         return x1, log_prob
