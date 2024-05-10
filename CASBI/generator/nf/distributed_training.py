@@ -24,7 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import train_test_split 
 import optuna
 
-from  CASBI.CASBI.generator.nf.generator import *
+from  CASBI.generator.nf.nf_model import *
         
 def ddp_setup():
     init_process_group(backend="nccl")
