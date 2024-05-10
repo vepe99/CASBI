@@ -5,16 +5,14 @@ import torch
 import matplotlib.pyplot as plt
 from numpy import random
 from scipy.spatial.distance import jensenshannon as js_div
-from scipy.spatial.distance import pdist, cdist
 from scipy.stats import kstwobign, pearsonr, gaussian_kde
-from scipy.stats import genextreme
 
 from tqdm.notebook import tqdm
 
 from CASBI.generator.fff.fff_model import FreeFormFlow
 from CASBI.generator.nf.nf_model import NF_condGLOW 
 
-__all__ = ['ks2d2s', 'estat', 'estat2d']
+# __all__ = ['ks2d2s', 'estat', 'estat2d']
 
 """
 ================================================================================
