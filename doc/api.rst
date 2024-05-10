@@ -1,13 +1,12 @@
 User API
 ========
 
-.. toctree::
 
 This is an example function:
 
-.. automodule:: CASBI
-    :members:
+.. autosummary::
+    ::toctree: _autosummary
+    ::recursive:
 
-.. automodule:: CASBI.generator.nf
-    :members: 
+    CASBI
     

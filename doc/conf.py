@@ -21,6 +21,7 @@ extensions = [
     "nbsphinx_link",
     "sphinx_mdinclude",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary", 
     "sphinx_rtd_theme",
 ]
 
