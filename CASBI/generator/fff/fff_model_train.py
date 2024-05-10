@@ -59,10 +59,10 @@ train_set, val_set = load_train_objs('../MW_MH/data/preprocessing_subsample/prep
 
 
 Flow = FreeFormFlow(dim = 2, 
-                    cond_dim = train_set.shape[1] - 2,
+                    cond_dim = 6,
                     hidden_dim = 128,
                     latent_dim = 2,
-                    n_SC_layer = 5,
+                    n_SC_layer = 6,
                     beta = 100**2,
                     device = 'cuda:0'
                     )

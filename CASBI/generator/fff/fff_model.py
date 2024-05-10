@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
@@ -41,11 +42,11 @@ class FreeFormFlow(torch.nn.Module):
                                                     scale=torch.ones(latent_dim, device=self.device), ),  
                                                     1)
         
-    def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set):
+    def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set, snapshot_path='./snapshot/fff_snpashot/', runs_path='./runs/fff_runs/'):
         
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=False)
-        writer = SummaryWriter()
+        writer = SummaryWriter(log_dir=runs_path)
         
         for epoch in tqdm(range(n_epochs)):
             train_running_loss = 0.0
@@ -73,8 +74,8 @@ class FreeFormFlow(torch.nn.Module):
                     val_running_loss += loss.mean().item()
                     if val_running_loss < self.best_loss:
                         self.best_loss = val_running_loss
-                        torch.save(self.state_dict(), './snapshot.pth')
-                        print('Model saved at epoch', epoch, 'in file ./snapshot.pth')
+                        torch.save(self.state_dict(), os.path.join(runs_path, 'snapshot.pth'))
+                        print('Model saved at epoch', epoch, 'in file',  f'{os.path.join(runs_path, "./snapshot.pth")}')
                     
             writer.add_scalar('Loss/val', val_running_loss, epoch)
             self.train()

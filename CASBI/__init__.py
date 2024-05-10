@@ -1,6 +1,6 @@
 
 from importlib import metadata
-from .utils import *
+from .utils.utils import *
 from .generator.nf.nf_model import *
 from .generator.fff.fff_model import *
 
