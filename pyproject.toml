@@ -45,8 +45,7 @@ dependencies = [
     "tqdm >= 4.65.0",
     "ytree >= 3.2.1",
 ]
-[tool.poetry.dependencies]
-ndtest = { git = "https://github.com/syrte/ndtest", branch = "main" }
+
 
 [project.optional-dependencies]
 tests = [
