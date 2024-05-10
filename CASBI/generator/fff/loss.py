@@ -118,12 +118,23 @@ def fff_loss(x: torch.Tensor,
     $$
     where $E[v_k^T v_k] = 1$, and $ f'(x) $ and $ g'(z) $ are the Jacobians of `encode` and `decode`.
 
-    :param x: Input data. Shape: (batch_size, ...)
-    :param encode: Encoder function. Takes `x` as input and returns a latent representation of shape (batch_size, latent_dim).
-    :param decode: Decoder function. Takes a latent representation of shape (batch_size, latent_dim) as input and returns a reconstruction of shape (batch_size, ...).
-    :param beta: Weight of the mean squared error.
-    :param hutchinson_samples: Number of Hutchinson samples to use for the volume change estimator.
-    :return: Per-sample loss. Shape: (batch_size,)
+    Parameters: 
+    -----------
+    x:
+        Input data. Shape: (batch_size, ...)
+    encode: 
+        Encoder function. Takes `x` as input and returns a latent representation of shape (batch_size, latent_dim).
+    decode: 
+        Decoder function. Takes a latent representation of shape (batch_size, latent_dim) as input and returns a reconstruction of shape (batch_size, ...).
+    beta: 
+        Weight of the mean squared error.
+    hutchinson_samples: 
+        Number of Hutchinson samples to use for the volume change estimator.
+        
+    Returns
+    --------
+    Per-sample loss. 
+        Shape: (batch_size,)
     """
     surrogate = nll_surrogate(x, encode, decode, hutchinson_samples)
     mse = torch.sum((x - surrogate.x1) ** 2, dim=tuple(range(1, len(x.shape))))
