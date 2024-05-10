@@ -2,11 +2,14 @@ from __future__ import division
 import numpy as np
 import pandas as pd
 import torch
+import matplotlib.pyplot as plt
 from numpy import random
 from scipy.spatial.distance import jensenshannon as js_div
 from scipy.spatial.distance import pdist, cdist
 from scipy.stats import kstwobign, pearsonr, gaussian_kde
 from scipy.stats import genextreme
+
+from tqdm.notebook import tqdm
 
 from CASBI.generator.fff.fff_model import FreeFormFlow
 from CASBI.generator.nf.nf_model import NF_condGLOW 
@@ -120,46 +123,6 @@ def quadct(x, y, xx, yy):
     c = np.sum(~ix1 & ix2) / n
     d = 1 - a - b - c
     return a, b, c, d
-
-
-def estat2d(x1, y1, x2, y2, **kwds):
-    return estat(np.c_[x1, y1], np.c_[x2, y2], **kwds)
-
-
-def estat(x, y, nboot=1000, replace=False, method='log', fitting=False):
-    '''
-    Energy distance statistics test.
-    Reference
-    ---------
-    Aslan, B, Zech, G (2005) Statistical energy as a tool for binning-free
-      multivariate goodness-of-fit tests, two-sample comparison and unfolding.
-      Nuc Instr and Meth in Phys Res A 537: 626-636
-    Szekely, G, Rizzo, M (2014) Energy statistics: A class of statistics
-      based on distances. J Stat Planning & Infer 143: 1249-1272
-    Brian Lau, multdist, https://github.com/brian-lau/multdist
-
-    '''
-    n, N = len(x), len(x) + len(y)
-    stack = np.vstack([x, y])
-    stack = (stack - stack.mean(0)) / stack.std(0)
-    if replace:
-        rand = lambda x: random.randint(x, size=x)
-    else:
-        rand = random.permutation
-
-    en = energy(stack[:n], stack[n:], method)
-    en_boot = np.zeros(nboot, 'f')
-    for i in range(nboot):
-        idx = rand(N)
-        en_boot[i] = energy(stack[idx[:n]], stack[idx[n:]], method)
-
-    if fitting:
-        param = genextreme.fit(en_boot)
-        p = genextreme.sf(en, *param)
-        return p, en, param
-    else:
-        p = (en_boot >= en).sum() / nboot
-        return p, en, en_boot
 
 
 ############# 
