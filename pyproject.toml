@@ -47,12 +47,6 @@ dependencies = [
 ]
 
 
-[project.optional-dependencies]
-tests = [
-    "pytest",
-    "pytest-cov",
-    "nbval",
-]
 docs = [
     "ipykernel",
     "nbsphinx",
@@ -61,6 +55,14 @@ docs = [
     "sphinx_mdinclude",
     "sphinx_rtd_theme",
 ]
+
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "nbval",
+]
+
 
 # Command line scripts installed as part of the installation
 [project.scripts]
