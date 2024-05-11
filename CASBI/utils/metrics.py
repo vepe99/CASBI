@@ -20,11 +20,10 @@ METRIC TEST
 In this package are contained the metric functions for the evaluation of the model.The metric are the Kullback Lieber divergence, the Jensen Shannon divergence and the Kolmogorov Smirov test.
 The 2d Kolmogorov Smirnov test (ks2d2s), and all the function linked to it are copied from https://github.com/syrte/ndtest.git.
 """
-
-####### THIS PART OF THE CODE IS COPIED FROM https://github.com/syrte/ndtest.git
 def ks2d2s(x1, y1, x2, y2, nboot=None, extra=False):
     '''
     Two-dimensional Kolmogorov-Smirnov test on two samples. 
+    
     Parameters
     ----------
     x1, y1 : ndarray, shape (n1, )
@@ -32,8 +31,7 @@ def ks2d2s(x1, y1, x2, y2, nboot=None, extra=False):
     x2, y2 : ndarray, shape (n2, )
         Data of sample 2. Size of two samples can be different.
     nboot : None or int
-        Number of bootstrap resample to estimate the p-value. A large number is expected.
-        If None, an approximate analytic estimate will be used.
+        Number of bootstrap resample to estimate the p-value. A large number is expected. If None, an approximate analytic estimate will be used.
     extra: bool, optional
         If True, KS statistic is also returned. Default is False.
 
@@ -42,13 +40,12 @@ def ks2d2s(x1, y1, x2, y2, nboot=None, extra=False):
     p : float
         Two-tailed p-value.
     D : float, optional
-        KS statistic, returned if keyword `extra` is True.
+        KS statistic, returned if keyword extra is True.
 
     Notes
     -----
     This is the two-sided K-S test. Small p-values means that the two samples are significantly different. 
-    Note that the p-value is only an approximation as the analytic distribution is unkonwn. The approximation
-    is accurate enough when N > ~20 and p-value < ~0.20 or so. When p-value > 0.20, the value may not be accurate,
+    Note that the p-value is only an approximation as the analytic distribution is unkonwn. The approximation is accurate enough when N > ~20 and p-value < ~0.20 or so. When p-value > 0.20, the value may not be accurate,
     but it certainly implies that the two samples are not significantly different. (cf. Press 2007)
 
     References
@@ -119,7 +116,6 @@ def quadct(x, y, xx, yy):
     return a, b, c, d
 
 
-############# 
 def kl_divergence(p, q):
  return sum(p[i] * np.log2(p[i]/q[i]) for i in range(len(p)))
 

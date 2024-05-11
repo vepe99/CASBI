@@ -175,30 +175,6 @@ class Trainer:
                 self.best_loss = val_running_loss
                 self._save_checkpoint(epoch)
             
-    
-    def test(self, test_set):
-        '''
-        Evaluates the model on a test set.
-        
-        Args:
-            test_set: The test set to evaluate the model on.
-        
-        Returns:
-            float: The average test loss.
-            
-        :no-index:
-        '''
-        print('start test')
-        self.model.eval()
-        with torch.no_grad():
-            test_running_loss = 0.
-            for source in test_set:
-                source = source.to(self.gpu_id)
-                batch_loss = self._run_batch(source, train=False)
-                test_running_loss += batch_loss/len(test_set)
-            test_running_loss = torch.tensor([test_running_loss]).to(self.gpu_id)
-            dist.all_reduce(test_running_loss, op=dist.ReduceOp.SUM)
-            return test_running_loss/int(os.environ["WORLD_SIZE"]) #the WORLD_SIZE is the number of GPUs
 
 def get_even_space_sample(df_mass_masked):
     '''
@@ -285,8 +261,6 @@ def main(path_train_dataframe: str,
     test_data = prepare_dataloader(test_set, batch_size)
     trainer = Trainer(model, train_data, val_data, test_data, optimizer, snapshot_path)
     trainer.train(total_epochs)
-    negative_log_likelihood = trainer.test(test_data)
-    np.savez(f'{test_and_nll_path}test_loss', nll=negative_log_likelihood.cpu().detach())
     destroy_process_group()
     
 
