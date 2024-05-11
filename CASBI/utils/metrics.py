@@ -17,14 +17,15 @@ from CASBI.generator.nf.nf_model import NF_condGLOW
 ================================================================================
 METRIC TEST
 ================================================================================
-In this package are contained the metric functions for the evaluation of the model.
-The metric are the Kullback Lieber divergence, the Jensen Shannon divergence and the Kolmogorov Smirov test.
+In this package are contained the metric functions for the evaluation of the model.The metric are the Kullback Lieber divergence, the Jensen Shannon divergence and the Kolmogorov Smirov test.
 The 2d Kolmogorov Smirnov test (ks2d2s), and all the function linked to it are copied from https://github.com/syrte/ndtest.git.
 """
 
 ####### THIS PART OF THE CODE IS COPIED FROM https://github.com/syrte/ndtest.git
 def ks2d2s(x1, y1, x2, y2, nboot=None, extra=False):
-    '''Two-dimensional Kolmogorov-Smirnov test on two samples. 
+    '''
+    Two-dimensional Kolmogorov-Smirnov test on two samples. 
+    
     Parameters
     ----------
     x1, y1 : ndarray, shape (n1, )

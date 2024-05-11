@@ -185,6 +185,8 @@ class Trainer:
         
         Returns:
             float: The average test loss.
+            
+        :no-index:
         '''
         print('start test')
         self.model.eval()

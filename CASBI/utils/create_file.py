@@ -13,8 +13,7 @@ Functions to extract the parameters and observables from the simulation snapshot
 def extract_parameter_array(sim_path='str', file_path='str') -> None:
     """
     Extract the parameters and observables from the path. Checks all the possible errors and if one is found it is saved as an 'error_file'.  
-    If no stars were formed in the snapshot, the function dosen't save any file.
-    Two .npz files are returned, one with the parameters and another with the observables.
+    If no stars were formed in the snapshot, the function dosen't save any file. Two .npz files are returned, one with the parameters and another with the observables.
     In order to load the parameters values use the common way of accessing numpy array in .npz file, for example: np.load('file.npz')['star_mass'].
     The parameters that are extracted are: star_mass, gas_mass, dm_mass, infall_time, redshift, a, chemical_mean and chemical_std.
     The observables that are extracted are: [Fe/H], [O/Fe], refered to as 'feh' and 'ofe'.
@@ -32,27 +31,27 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         The file is save in the folder '/file_path/name_file_parameters.npz'. 
         The parameters are:
         file['star_mass'] : float
-            Total mass of the formed stars in the snapshot
+        Total mass of the formed stars in the snapshot
         file['gas_mass'] : float
-            Total mass of the gas in the snapshot
+        Total mass of the gas in the snapshot
         file['dm_mass'] : float
-            Total mass of the dark matter in the snapshot
+        Total mass of the dark matter in the snapshot
         file['infall_time'] : float
-            Time at which the snapshot was taken in Gyr
+        Time at which the snapshot was taken in Gyr
         file['redshift'] : float
-            Redshift at which the snapshot was taken
+        Redshift at which the snapshot was taken
         file['a'] : float
-            Scale factor at which the snapshot was taken
+        Scale factor at which the snapshot was taken
         file['chemical_mean'] : np.array
-            Array with the mean of metals, FeMassFrac and OxMassFrac in the snapshot
+        Array with the mean of metals, FeMassFrac and OxMassFrac in the snapshot
         file['chemical_std'] : np.array
-            Array with the standard deviation of metals, FeMassFrac and OxMassFrac in the snapshot
+        Array with the standard deviation of metals, FeMassFrac and OxMassFrac in the snapshot
 
         The observables are:   
         file['feh'] : np.array
-            Array with the [Fe/H] of the formed stars in the snapshot
+        Array with the [Fe/H] of the formed stars in the snapshot
         file['ofe'] : np.array
-            Array with the [O/Fe] of the formed stars in the snapshot
+        Array with the [O/Fe] of the formed stars in the snapshot
     """
     
 
@@ -152,7 +151,7 @@ def gen_files(sim_path: str, file_path: str) -> None:
     """                       
 
     # for p in tqdm(sim_path):
-    #     extract_parameter_array(sim_path=p, file_path=file_path)
+    #   extract_parameter_array(sim_path=p, file_path=file_path)
     pool = Pool(processes=200)
     pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
     

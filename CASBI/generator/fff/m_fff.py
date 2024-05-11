@@ -147,12 +147,12 @@ def random_tangent_vec(manifold, base_point, n_samples):
     ----------
     n_samples : int
         Number of samples.
-    base_point :  array-like, shape={[n_samples, *point_shape]}
+    base_point :  array-like, shape={[n_samples, point_shape]}
         Point.
 
     Returns
     -------
-    tangent_vec : array-like, shape=[..., *point_shape]
+    tangent_vec : array-like, shape=[..., point_shape]
         Tangent vec at base point.
     """
     if (
