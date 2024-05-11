@@ -12,5 +12,5 @@ formats: all
 
 python:
   install:
-    - method: pip
-      path: .[doc]
+    - method: poetry
+      path: .

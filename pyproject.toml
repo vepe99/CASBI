@@ -47,9 +47,7 @@ dependencies = [
 ]
 
 
-
-
-[project.optional-dependencies]
+[tool.poetry.optional-dependencies]
 tests = [
     "pytest",
     "pytest-cov",
