@@ -25,7 +25,6 @@ The 2d Kolmogorov Smirnov test (ks2d2s), and all the function linked to it are c
 def ks2d2s(x1, y1, x2, y2, nboot=None, extra=False):
     '''
     Two-dimensional Kolmogorov-Smirnov test on two samples. 
-    
     Parameters
     ----------
     x1, y1 : ndarray, shape (n1, )
