@@ -8,6 +8,7 @@ CASBI
    intro
    demo
    api
+   test
 
 Indices and tables
 ==================
