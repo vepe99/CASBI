@@ -3,9 +3,9 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-import os
-import sys
-sys.path.insert(0, os.path.abspath('./'))  # Source code dir relative to this file
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('./'))  # Source code dir relative to this file
 
 
 
@@ -27,8 +27,11 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary", 
     "sphinx_rtd_theme",
+    "autoapi.extension",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
+
+autoapi_dirs = ['../CASBI']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
