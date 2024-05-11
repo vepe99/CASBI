@@ -74,8 +74,9 @@ class FreeFormFlow(torch.nn.Module):
                     val_running_loss += loss.mean().item()
                     if val_running_loss < self.best_loss:
                         self.best_loss = val_running_loss
-                        torch.save(self.state_dict(), os.path.join(runs_path, 'snapshot.pth'))
-                        print('Model saved at epoch', epoch, 'in file',  f'{os.path.join(runs_path, "./snapshot.pth")}')
+                        save_path = os.path.join(snapshot_path, 'snapshot.pth')
+                        torch.save(self.state_dict(), save_path)
+                        print('Model saved at epoch', epoch, 'in file',  f'{save_path}')
                     
             writer.add_scalar('Loss/val', val_running_loss, epoch)
             self.train()
