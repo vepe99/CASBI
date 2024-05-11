@@ -3,7 +3,7 @@ from math import prod, sqrt
 import torch
 from torch.autograd.forward_ad import unpack_dual
 
-from m_fff import random_tangent_vec
+from .m_fff import random_tangent_vec
 
 
 def sample_v_in_tangent(x: torch.Tensor, hutchinson_samples: int, manifold):
