@@ -60,10 +60,6 @@ docs = [
     "sphinx",
     "sphinx_mdinclude",
     "sphinx_rtd_theme",
-    "sphinx.ext.autosummary", 
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.autodoc",
 ]
 
 # Command line scripts installed as part of the installation
