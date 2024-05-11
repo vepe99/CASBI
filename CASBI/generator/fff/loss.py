@@ -34,14 +34,21 @@ Transform = Callable[[torch.Tensor], torch.Tensor]
 
 def sample_v(x: torch.Tensor, hutchinson_samples: int):
     """
-    Sample a random vector v of shape (*x.shape, hutchinson_samples)
+    Sample a random vector v of shape (x.shape, hutchinson_samples)
     with scaled orthonormal columns.
 
     The reference data is used for shape, device and dtype.
 
-    :param x: Reference data.
-    :param hutchinson_samples: Number of Hutchinson samples to draw.
-    :return:
+    Parameters
+    ----------
+    x: 
+        Reference data.
+    hutchinson_samples: 
+        Number of Hutchinson samples to draw.
+    
+    Return
+    ------
+    q
     """
     batch_size, total_dim = x.shape[0], prod(x.shape[1:])
     if hutchinson_samples > total_dim:
@@ -57,12 +64,23 @@ def nll_surrogate(x: torch.Tensor, cond: torch.Tensor, encode: Transform, decode
     Compute the per-sample surrogate for the negative log-likelihood and the volume change estimator.
     The gradient of the surrogate is the gradient of the actual negative log-likelihood.
 
-    :param x: Input data. Shape: (batch_size, ...)
-    :param encode: Encoder function. Takes `x` as input and returns a latent representation of shape (batch_size, latent_dim).
-    :param decode: Decoder function. Takes a latent representation of shape (batch_size, latent_dim) as input and returns a reconstruction of shape (batch_size, ...).
-    :param hutchinson_samples: Number of Hutchinson samples to use for the volume change estimator.
-    :param manifold: Manifold on which the latent space lies. If provided, the volume change is computed on the manifold.
-    :return: Per-sample loss. Shape: (batch_size,)
+    Parameters
+    ----------
+    x: 
+        Input data. Shape: (batch_size, ...)
+    encode: 
+        Encoder function. Takes `x` as input and returns a latent representation of shape (batch_size, latent_dim).
+    decode: 
+        Decoder function. Takes a latent representation of shape (batch_size, latent_dim) as input and returns a reconstruction of shape (batch_size, ...).
+    hutchinson_samples: 
+        Number of Hutchinson samples to use for the volume change estimator.
+    param manifold: 
+    Manifold on which the latent space lies. If provided, the volume change is computed on the manifold.
+    
+    Returns
+    -------
+    Per-sample loss: 
+        Shape=(batch_size,)
     """
     x = x.requires_grad_()
     z = encode(x, cond)
@@ -144,7 +162,15 @@ def fff_loss(x: torch.Tensor,
 def sum_except_batch(x: torch.Tensor) -> torch.Tensor:
     """
     Sum over all dimensions except the first.
-    :param x: Input tensor.
-    :return: Sum over all dimensions except the first.
+    
+    Parameters
+    ----------
+    x: 
+        Input tensor.
+    
+    Returns
+    ---------- 
+    sum:
+        Sum over all dimensions except the first.
     """
     return torch.sum(x.reshape(x.shape[0], -1), dim=1)

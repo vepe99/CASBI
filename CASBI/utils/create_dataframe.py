@@ -10,7 +10,6 @@ from multiprocessing import Pool
 GENERATION OF THE DATAFRAME 
 ===========================
 Function to preprocess the file obtain from `CASBI.utils.prepare_file` and save the data in a dataframe.
-
 """
 
 def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_observations=True, scale_parameter=False) -> pd.DataFrame:
@@ -22,7 +21,8 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
     Otherwise all columns will be rescaled accordingly to the `inverse` parameter.
     The parameters are not rescaled because the inference would not work correctly.
     
-    Parameters:
+    Parameters
+    -----------
     df (pandas.DataFrame): 
         The input dataframe to be rescale.
     mean_and_std_path (str): 
@@ -34,7 +34,8 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
         If True, the mean and standard deviation of the columns of the dataframe are saved in a .parquet file in the mean_and_std_path directory.
         Otherwise, the mean and standard deviation are loaded from the mean_and_std_path file.
         
-    Returns:
+    Returns
+    --------
     df (pandas.DataFrame): 
         The dataframe with the observables data rescaled. If save=True all the columns are rescaled and the mean and standard deviation are saved in the mean_and_std_path directory.
         Otherwise only the observables columns are rescaled.

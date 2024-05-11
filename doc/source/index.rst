@@ -11,5 +11,4 @@ Table of Contents
    :maxdepth: 2
 
    intro
-   demo
    api/index

@@ -19,10 +19,7 @@ METRIC TEST
 ================================================================================
 In this package are contained the metric functions for the evaluation of the model.
 The metric are the Kullback Lieber divergence, the Jensen Shannon divergence and the Kolmogorov Smirov test.
-
 The 2d Kolmogorov Smirnov test (ks2d2s), and all the function linked to it are copied from https://github.com/syrte/ndtest.git.
-
-
 """
 
 ####### THIS PART OF THE CODE IS COPIED FROM https://github.com/syrte/ndtest.git

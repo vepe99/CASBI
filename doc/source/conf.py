@@ -24,8 +24,6 @@ author = 'vepe99'
 # ones.
 extensions = [
     "sphinx.ext.napoleon",
-    "nbsphinx",
-    "nbsphinx_link",
     "sphinx_mdinclude",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
