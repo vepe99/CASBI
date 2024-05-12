@@ -9,7 +9,7 @@ Welcome to CASBI's documentation!
 
    intro
    api 
-
+   docs/modules
 
 
 Indices and tables
