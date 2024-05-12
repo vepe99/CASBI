@@ -17,29 +17,47 @@ class SkipConnection(torch.nn.Module):
 class FreeFormFlow(torch.nn.Module):
     """A class representing the FreeFormFlow model.
 
-    Params:
+    Parameter:
     -------
-        dim (int): The dimension of the input data.
-        cond_dim (int): The dimension of the conditional data.
-        hidden_dim (int): The dimension of the hidden layers.
-        latent_dim (int): The dimension of the latent space.
-        n_SC_layer (int): The number of skip connection layers.
-        beta (float): The weight for the reconstruction loss.
-        device (torch.device): The device to run the model on.
+    dim (int): 
+        The dimension of the input data.
+    cond_dim (int): 
+        The dimension of the conditional data.
+    hidden_dim (int): 
+        The dimension of the hidden layers.
+    latent_dim (int): 
+        The dimension of the latent space.
+    n_SC_layer (int): 
+        The number of skip connection layers.
+    beta (float): 
+        The weight for the reconstruction loss.
+    device (torch.device): 
+        The device to run the model on.
 
     Attributes:
     ----------
-        dim (int): The dimension of the input data.
-        cond_dim (int): The dimension of the conditional data.
-        hidden_dim (int): The dimension of the hidden layers.
-        latent_dim (int): The dimension of the latent space.
-        n_SC_layer (int): The number of skip connection layers.
-        beta (float): The weight for the reconstruction loss.
-        device (torch.device): The device to run the model on.
-        best_loss (float): The best loss achieved during training.
-        encoder (SkipConnection): The encoder network.
-        decoder (SkipConnection): The decoder network.
-        latent (torch.distributions.Independent): The distribution of the latent space.
+    dim (int): 
+        The dimension of the input data.
+    cond_dim (int): 
+        The dimension of the conditional data.
+    hidden_dim (int): 
+        The dimension of the hidden layers.
+    latent_dim (int): 
+        The dimension of the latent space.
+    n_SC_layer (int): 
+        The number of skip connection layers.
+    beta (float): 
+        The weight for the reconstruction loss.
+    device (torch.device): 
+        The device to run the model on.
+    best_loss (float): 
+        The best loss achieved during training.
+    encoder (SkipConnection): 
+        The encoder network.
+    decoder (SkipConnection): 
+        The decoder network.
+    latent (torch.distributions.Independent): 
+        The distribution of the latent space.
 
     """
 
@@ -74,13 +92,20 @@ class FreeFormFlow(torch.nn.Module):
 
         Params:
         ------
-            n_epochs (int): The number of epochs to train for.
-            batch_size (int): The batch size for training.
-            optimizer (torch.optim.Optimizer): The optimizer for training.
-            train_set (torch.utils.data.Dataset): The training dataset.
-            val_set (torch.utils.data.Dataset): The validation dataset.
-            snapshot_path (str, optional): The path to save model snapshots. Defaults to './snapshot/fff_snpashot/'.
-            runs_path (str, optional): The path to save training logs. Defaults to './runs/fff_runs/'.
+        n_epochs (int): 
+            The number of epochs to train for.
+        batch_size (int):  
+            The batch size for training.
+        optimizer (torch.optim.Optimizer): 
+            The optimizer for training.
+        train   _set (torch.utils.data.Dataset): 
+            The training dataset.
+        val_set (torch.utils.data.Dataset): 
+            The validation dataset.
+        snapshot_path (str, optional): 
+            The path to save model snapshots. Defaults to './snapshot/fff_snpashot/'.
+        runs_path (str, optional): 
+            The path to save training logs. Defaults to './runs/fff_runs/'.
         Reurns:
         ------
         train_model: The trained FreeFormFlow model.
@@ -128,13 +153,17 @@ class FreeFormFlow(torch.nn.Module):
 
         Params:
         ------
-            x (torch.Tensor): The input data.
-            cond (torch.Tensor): The conditional data.
+        x (torch.Tensor): 
+            The input data.
+        cond (torch.Tensor): 
+            The conditional data.
 
         Returns:
         --------
-            torch.Tensor: The reconstructed x.
-            torch.Tensor: The log probability.
+        torch.Tensor: 
+            The reconstructed x.
+        torch.Tensor:  
+            The log probability.
 
         """
         z = self.encoder(x, cond)
@@ -149,12 +178,15 @@ class FreeFormFlow(torch.nn.Module):
 
         Params:
         -------
-            n_samples (int): The number of samples to generate.
-            cond (torch.Tensor): The conditional data.
+        n_samples (int): 
+            The number of samples to generate.
+        cond (torch.Tensor): 
+            The conditional data.
 
         Returns:
         --------
-            torch.Tensor: The generated samples.
+        torch.Tensor: 
+            The generated samples.
 
         """
         z = torch.randn(n_samples, self.latent_dim, device=self.device)
