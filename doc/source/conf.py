@@ -5,9 +5,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../../CASBI/'))  # Source code dir relative to this file
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('../../CASBI/'))  # Source code dir relative to this file
 
 
 
