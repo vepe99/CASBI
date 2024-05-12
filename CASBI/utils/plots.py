@@ -23,7 +23,12 @@ def custom_kde_plot(test_df: pd.DataFrame, df_sample:pd.DataFrame, model:torch.n
     Visualize the 2D KDE of the test data and the sample data, report also the KL, JS and D statics of the single data generation and the mean over the sets.
     Both marginals and the joint plot are shown.
     
+    Parameters
+    ----------
     
+    
+    Returns
+    -------
     
     
     """

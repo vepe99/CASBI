@@ -8,6 +8,7 @@ Table of Contents
 *****************
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 100
+   :caption: Table of Contents:
 
-   api/index
+   api/index 
