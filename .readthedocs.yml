@@ -14,3 +14,4 @@ python:
   install:
     - method: pip
       path: .[docs]
+    -requirements: .pyproject.toml
