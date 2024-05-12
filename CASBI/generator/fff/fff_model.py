@@ -15,10 +15,12 @@ class SkipConnection(torch.nn.Module):
         return x + self.inner(torch.cat((x, cond), dim=1), *args, **kwargs)
     
 class FreeFormFlow(torch.nn.Module):
-    """A class representing the FreeFormFlow model.
+    """
+    Class for the FreeFormFlow model.
 
-    Parameter:
+    Parameters:
     -------
+    
     dim (int): 
         The dimension of the input data.
     cond_dim (int): 
@@ -36,6 +38,7 @@ class FreeFormFlow(torch.nn.Module):
 
     Attributes:
     ----------
+    
     dim (int): 
         The dimension of the input data.
     cond_dim (int): 
@@ -90,8 +93,9 @@ class FreeFormFlow(torch.nn.Module):
         """
         Train the FreeFormFlow model.
 
-        Params:
+        Parameters:
         ------
+        
         n_epochs (int): 
             The number of epochs to train for.
         batch_size (int):  
@@ -106,6 +110,7 @@ class FreeFormFlow(torch.nn.Module):
             The path to save model snapshots. Defaults to './snapshot/fff_snpashot/'.
         runs_path (str, optional): 
             The path to save training logs. Defaults to './runs/fff_runs/'.
+            
         Reurns:
         ------
         train_model: The trained FreeFormFlow model.
@@ -151,8 +156,9 @@ class FreeFormFlow(torch.nn.Module):
         """
         Compute the log probability and the reconstructed x for the given input.
 
-        Params:
+        Parameters:
         ------
+        
         x (torch.Tensor): 
             The input data.
         cond (torch.Tensor): 
@@ -160,6 +166,7 @@ class FreeFormFlow(torch.nn.Module):
 
         Returns:
         --------
+        
         torch.Tensor: 
             The reconstructed x.
         torch.Tensor:  
