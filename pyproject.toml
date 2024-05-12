@@ -40,13 +40,12 @@ dependencies = [
     "seaborn >= 0.12.2",
     "scikit-learn >= 1.4.1",
     "scipy == 1.13.0",
+    "sphinx",
     "tensorboard >= 2.16.2",
     "torch > 2.2.2",
     "tqdm >= 4.65.0",
     "ytree >= 3.2.1",
 ]
-
-
 
 
 [project.optional-dependencies]
