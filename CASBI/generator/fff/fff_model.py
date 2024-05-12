@@ -111,7 +111,7 @@ class FreeFormFlow(torch.nn.Module):
         runs_path (str, optional): 
             The path to save training logs. Defaults to './runs/fff_runs/'.
             
-        Reurns:
+        Return:
         ------
         train_model: The trained FreeFormFlow model.
         """
@@ -164,7 +164,7 @@ class FreeFormFlow(torch.nn.Module):
         cond (torch.Tensor): 
             The conditional data.
 
-        Returns:
+        Return:
         --------
         
         torch.Tensor: 
