@@ -5,9 +5,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../../'))  # Source code dir relative to this file
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('../'))  # Source code dir relative to this file
 
 
 
@@ -23,18 +23,21 @@ author = 'vepe99'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "nbsphinx",
+    "nbsphinx_link",
+    "sphinx_mdinclude",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary", 
     "sphinx_rtd_theme",
 ]
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
+# autosummary_generate = True  # Turn on sphinx.ext.autosummary
 autosummary_imported_members = False
 autodoc_mock_imports = ['torch', 'FrEIA', 'lightning']
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+# templates_path = ['_templates']
 
 
 # List of patterns, relative to source directory, that match files and
