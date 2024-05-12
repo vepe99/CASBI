@@ -61,7 +61,6 @@ class FreeFormFlow(torch.nn.Module):
         The decoder network.
     latent (torch.distributions.Independent): 
         The distribution of the latent space.
-
     """
 
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
