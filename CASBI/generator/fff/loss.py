@@ -27,6 +27,7 @@ from typing import Union, Callable
 import torch
 from torch.autograd import grad
 from torch.autograd.forward_ad import dual_level, make_dual, unpack_dual
+from CASBI.generator.fff.m_loss import project_z, project_x1, sample_v_in_tangent
 
 SurrogateOutput = namedtuple("SurrogateOutput", ["z", "x1", "nll", "surrogate", "regularizations"])
 Transform = Callable[[torch.Tensor], torch.Tensor]
@@ -88,7 +89,6 @@ def nll_surrogate(x: torch.Tensor, cond: torch.Tensor, encode: Transform, decode
     metrics = {}
     # M-FFF: Project to manifold and store projection distance for regularization
     if manifold is not None:
-        from m_loss import project_z
         z, metrics["z_projection"] = project_z(z, manifold)
 
     surrogate = 0
@@ -96,7 +96,6 @@ def nll_surrogate(x: torch.Tensor, cond: torch.Tensor, encode: Transform, decode
         vs = sample_v(z, hutchinson_samples)
     else:
         # M-FFF: Sample v in the tangent space of z
-        from m_loss import sample_v_in_tangent
         vs = sample_v_in_tangent(z, hutchinson_samples, manifold)
     for k in range(hutchinson_samples):
         v = vs[..., k]
@@ -108,7 +107,6 @@ def nll_surrogate(x: torch.Tensor, cond: torch.Tensor, encode: Transform, decode
 
             # M-FFF: Project to manifold and store projection distance for regularization
             if manifold is not None:
-                from m_loss import project_x1
                 dual_x1, metrics["x1_projection"] = project_x1(dual_x1, manifold)
 
             x1, v1 = unpack_dual(dual_x1)

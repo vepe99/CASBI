@@ -3,8 +3,8 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
 
-from .loss import  nll_surrogate
-from .jacobian import compute_jacobian
+from CASBI.generator.fff.loss import  nll_surrogate
+from CASBI.generator.fff.jacobian import compute_jacobian
 
 class SkipConnection(torch.nn.Module):
     def __init__(self, inner):

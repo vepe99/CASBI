@@ -9,7 +9,3 @@ API
    :recursive:
 
    CASBI
-   CASBI.generator
-   CASBI.generator.fff
-   CASBI.generator.nf
-   CASBI.utils

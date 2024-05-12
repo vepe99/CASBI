@@ -2,7 +2,7 @@ from functools import partial, wraps
 import torch
 from torch.func import jacfwd, jacrev, vmap
 
-from .utils import batch_wrap
+from CASBI.generator.fff.utils import batch_wrap
 
 
 def double_output(fn):

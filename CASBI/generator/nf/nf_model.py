@@ -18,7 +18,7 @@ from torch.cuda.amp import GradScaler
 from torch.utils.tensorboard import SummaryWriter
 
 from sklearn.model_selection import train_test_split 
-import optuna
+
 
 
 class MLP(nn.Module):
