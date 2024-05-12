@@ -18,7 +18,7 @@ class FreeFormFlow(torch.nn.Module):
     """
     Class for the FreeFormFlow model.
 
-    Parameters:
+    Parameters
     -----------
     
     dim (int): 
@@ -36,8 +36,8 @@ class FreeFormFlow(torch.nn.Module):
     device (torch.device): 
         The device to run the model on.
 
-    Attributes:
-    ------------
+    Attributes
+    ----------
     
     dim (int): 
         The dimension of the input data.
@@ -93,8 +93,8 @@ class FreeFormFlow(torch.nn.Module):
         """
         Train the FreeFormFlow model.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         
         n_epochs (int): 
             The number of epochs to train for.
@@ -111,8 +111,8 @@ class FreeFormFlow(torch.nn.Module):
         runs_path (str, optional): 
             The path to save training logs. Defaults to './runs/fff_runs/'.
             
-        Returns:
-        --------
+        Returns
+        -------
         train_model: The trained FreeFormFlow model.
         """
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
@@ -156,16 +156,16 @@ class FreeFormFlow(torch.nn.Module):
         """
         Compute the log probability and the reconstructed x for the given input.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         
         x (torch.Tensor): 
             The input data.
         cond (torch.Tensor): 
             The conditional data.
 
-        Returns:
-        --------
+        Returns
+        -------
         
         torch.Tensor: 
             The reconstructed x.
@@ -183,15 +183,15 @@ class FreeFormFlow(torch.nn.Module):
         """
         Generate samples from the FreeFormFlow model.
 
-        Parameters:
-        -----------
+        Parameters
+        ---------
         n_samples (int): 
             The number of samples to generate.
         cond (torch.Tensor): 
             The conditional data.
 
-        Returns:
-        --------
+        Returns
+        -------
         torch.Tensor: 
             The generated samples.
 
