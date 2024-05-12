@@ -19,7 +19,7 @@ class FreeFormFlow(torch.nn.Module):
     Class for the FreeFormFlow model.
 
     Parameters:
-    -------
+    -----------
     
     dim (int): 
         The dimension of the input data.
@@ -37,7 +37,7 @@ class FreeFormFlow(torch.nn.Module):
         The device to run the model on.
 
     Attributes:
-    ----------
+    ------------
     
     dim (int): 
         The dimension of the input data.
@@ -94,7 +94,7 @@ class FreeFormFlow(torch.nn.Module):
         Train the FreeFormFlow model.
 
         Parameters:
-        ------
+        -----------
         
         n_epochs (int): 
             The number of epochs to train for.
@@ -111,8 +111,8 @@ class FreeFormFlow(torch.nn.Module):
         runs_path (str, optional): 
             The path to save training logs. Defaults to './runs/fff_runs/'.
             
-        Return:
-        ------
+        Returns:
+        --------
         train_model: The trained FreeFormFlow model.
         """
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
@@ -157,14 +157,14 @@ class FreeFormFlow(torch.nn.Module):
         Compute the log probability and the reconstructed x for the given input.
 
         Parameters:
-        ------
+        -----------
         
         x (torch.Tensor): 
             The input data.
         cond (torch.Tensor): 
             The conditional data.
 
-        Return:
+        Returns:
         --------
         
         torch.Tensor: 
@@ -183,8 +183,8 @@ class FreeFormFlow(torch.nn.Module):
         """
         Generate samples from the FreeFormFlow model.
 
-        Params:
-        -------
+        Parameters:
+        -----------
         n_samples (int): 
             The number of samples to generate.
         cond (torch.Tensor): 
