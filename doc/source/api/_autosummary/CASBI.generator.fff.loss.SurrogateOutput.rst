@@ -1,4 +1,4 @@
-﻿CASBI.generator.fff.SurrogateOutput
+CASBI.generator.fff.SurrogateOutput
 ========================================
 
 .. currentmodule:: CASBI.generator.fff.loss

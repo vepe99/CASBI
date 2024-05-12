@@ -1,4 +1,4 @@
-﻿CASBI.generator.fff.TrainWallClock
+CASBI.generator.fff.TrainWallClock
 ========================================
 
 .. currentmodule:: CASBI.generator.fff.utils

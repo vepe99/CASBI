@@ -1,4 +1,4 @@
-﻿CASBI.generator.fff
+CASBI.generator.fff
 ===================
 
 .. automodule:: CASBI.generator.fff

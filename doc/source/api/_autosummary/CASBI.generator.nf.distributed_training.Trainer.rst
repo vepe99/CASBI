@@ -1,4 +1,4 @@
-﻿CASBI.generator.nf.Trainer
+CASBI.generator.nf.Trainer
 ===============================================
 
 .. currentmodule:: CASBI.generator.nf.distributed_training
@@ -18,7 +18,6 @@
             :nosignatures:
             
                ~Trainer.__init__
-               ~Trainer.test
                ~Trainer.train
       
    
