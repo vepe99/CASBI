@@ -17,7 +17,8 @@ class SkipConnection(torch.nn.Module):
 class FreeFormFlow(torch.nn.Module):
     """A class representing the FreeFormFlow model.
 
-    Args:
+    Params:
+    -------
         dim (int): The dimension of the input data.
         cond_dim (int): The dimension of the conditional data.
         hidden_dim (int): The dimension of the hidden layers.
@@ -27,6 +28,7 @@ class FreeFormFlow(torch.nn.Module):
         device (torch.device): The device to run the model on.
 
     Attributes:
+    ----------
         dim (int): The dimension of the input data.
         cond_dim (int): The dimension of the conditional data.
         hidden_dim (int): The dimension of the hidden layers.
@@ -70,7 +72,8 @@ class FreeFormFlow(torch.nn.Module):
         """
         Train the FreeFormFlow model.
 
-        Args:
+        Params:
+        ------
             n_epochs (int): The number of epochs to train for.
             batch_size (int): The batch size for training.
             optimizer (torch.optim.Optimizer): The optimizer for training.
@@ -78,7 +81,9 @@ class FreeFormFlow(torch.nn.Module):
             val_set (torch.utils.data.Dataset): The validation dataset.
             snapshot_path (str, optional): The path to save model snapshots. Defaults to './snapshot/fff_snpashot/'.
             runs_path (str, optional): The path to save training logs. Defaults to './runs/fff_runs/'.
-
+        Reurns:
+        ------
+        train_model: The trained FreeFormFlow model.
         """
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=False)
@@ -121,11 +126,13 @@ class FreeFormFlow(torch.nn.Module):
         """
         Compute the log probability and the reconstructed x for the given input.
 
-        Args:
+        Params:
+        ------
             x (torch.Tensor): The input data.
             cond (torch.Tensor): The conditional data.
 
         Returns:
+        --------
             torch.Tensor: The reconstructed x.
             torch.Tensor: The log probability.
 
@@ -140,11 +147,13 @@ class FreeFormFlow(torch.nn.Module):
         """
         Generate samples from the FreeFormFlow model.
 
-        Args:
+        Params:
+        -------
             n_samples (int): The number of samples to generate.
             cond (torch.Tensor): The conditional data.
 
         Returns:
+        --------
             torch.Tensor: The generated samples.
 
         """
