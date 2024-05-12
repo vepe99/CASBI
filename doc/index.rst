@@ -8,7 +8,6 @@ Welcome to CASBI's documentation!
    :caption: Contents:
 
    intro
-   api 
    docs/modules
 
 
