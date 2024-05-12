@@ -15,6 +15,32 @@ class SkipConnection(torch.nn.Module):
         return x + self.inner(torch.cat((x, cond), dim=1), *args, **kwargs)
     
 class FreeFormFlow(torch.nn.Module):
+    """A class representing the FreeFormFlow model.
+
+    Args:
+        dim (int): The dimension of the input data.
+        cond_dim (int): The dimension of the conditional data.
+        hidden_dim (int): The dimension of the hidden layers.
+        latent_dim (int): The dimension of the latent space.
+        n_SC_layer (int): The number of skip connection layers.
+        beta (float): The weight for the reconstruction loss.
+        device (torch.device): The device to run the model on.
+
+    Attributes:
+        dim (int): The dimension of the input data.
+        cond_dim (int): The dimension of the conditional data.
+        hidden_dim (int): The dimension of the hidden layers.
+        latent_dim (int): The dimension of the latent space.
+        n_SC_layer (int): The number of skip connection layers.
+        beta (float): The weight for the reconstruction loss.
+        device (torch.device): The device to run the model on.
+        best_loss (float): The best loss achieved during training.
+        encoder (SkipConnection): The encoder network.
+        decoder (SkipConnection): The decoder network.
+        latent (torch.distributions.Independent): The distribution of the latent space.
+
+    """
+
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
         super().__init__()
         self.dim = dim
@@ -24,30 +50,40 @@ class FreeFormFlow(torch.nn.Module):
         self.n_SC_layer = n_SC_layer
         self.beta = beta
         self.device = device
-        
         self.best_loss = 1000
-        
+
         encoder_SC_layers = [torch.nn.Linear(self.dim+self.cond_dim if i == 0 else self.hidden_dim, self.hidden_dim) if i % 2 == 0 else torch.nn.SiLU() for i in range(2*self.n_SC_layer - 1)]
         encoder_SC_layers.append(torch.nn.Linear(self.hidden_dim, self.latent_dim))
-        
-        
+
         decoder_SC_layers = [torch.nn.Linear(self.latent_dim+self.cond_dim if i == 0 else self.hidden_dim, self.hidden_dim) if i % 2 == 0 else torch.nn.SiLU() for i in range(2*self.n_SC_layer - 1)]
         decoder_SC_layers.append(torch.nn.Linear(self.hidden_dim, self.dim))
 
         self.encoder = SkipConnection(torch.nn.Sequential(*encoder_SC_layers)).to(self.device)
         self.decoder = SkipConnection(torch.nn.Sequential(*decoder_SC_layers)).to(self.device)
-        
+
         self.latent = torch.distributions.Independent(
-                        torch.distributions.Normal(loc=torch.zeros(latent_dim, device=self.device),
-                                                    scale=torch.ones(latent_dim, device=self.device), ),  
-                                                    1)
-        
+            torch.distributions.Normal(loc=torch.zeros(latent_dim, device=self.device),
+                                       scale=torch.ones(latent_dim, device=self.device), ),
+            1)
+
     def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set, snapshot_path='./snapshot/fff_snpashot/', runs_path='./runs/fff_runs/'):
-        
+        """
+        Train the FreeFormFlow model.
+
+        Args:
+            n_epochs (int): The number of epochs to train for.
+            batch_size (int): The batch size for training.
+            optimizer (torch.optim.Optimizer): The optimizer for training.
+            train_set (torch.utils.data.Dataset): The training dataset.
+            val_set (torch.utils.data.Dataset): The validation dataset.
+            snapshot_path (str, optional): The path to save model snapshots. Defaults to './snapshot/fff_snpashot/'.
+            runs_path (str, optional): The path to save training logs. Defaults to './runs/fff_runs/'.
+
+        """
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=False)
         writer = SummaryWriter(log_dir=runs_path)
-        
+
         for epoch in tqdm(range(n_epochs)):
             train_running_loss = 0.0
             for batch in train_loader:
@@ -61,7 +97,7 @@ class FreeFormFlow(torch.nn.Module):
                 loss.mean().backward()
                 optimizer.step()
             writer.add_scalar('Loss/train', train_running_loss, epoch)
-            
+
             val_running_loss = 0.0
             for batch in val_loader:
                 self.eval()
@@ -77,21 +113,41 @@ class FreeFormFlow(torch.nn.Module):
                         save_path = os.path.join(snapshot_path, 'snapshot.pth')
                         torch.save(self.state_dict(), save_path)
                         print('Model saved at epoch', epoch, 'in file',  f'{save_path}')
-                    
+
             writer.add_scalar('Loss/val', val_running_loss, epoch)
             self.train()
-                    
+
     def log_prob(self, x, cond):
         """
-        return log_probability and the reconstructed x for the 
+        Compute the log probability and the reconstructed x for the given input.
+
+        Args:
+            x (torch.Tensor): The input data.
+            cond (torch.Tensor): The conditional data.
+
+        Returns:
+            torch.Tensor: The reconstructed x.
+            torch.Tensor: The log probability.
+
         """
         z = self.encoder(x, cond)
         x1, jac_dec = compute_jacobian(z, cond, self.decoder)
         log_abs_jac_det = torch.linalg.slogdet(jac_dec).logabsdet
         log_prob = self.latent.log_prob(z) - log_abs_jac_det
         return x1, log_prob
-    
+
     def sample(self, n_samples, cond):
+        """
+        Generate samples from the FreeFormFlow model.
+
+        Args:
+            n_samples (int): The number of samples to generate.
+            cond (torch.Tensor): The conditional data.
+
+        Returns:
+            torch.Tensor: The generated samples.
+
+        """
         z = torch.randn(n_samples, self.latent_dim, device=self.device)
         cond = cond.to(self.device)
         return self.decoder(z, cond)
