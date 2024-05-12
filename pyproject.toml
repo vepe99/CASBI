@@ -61,6 +61,7 @@ docs = [
     "sphinx",
     "sphinx_mdinclude",
     "sphinx_rtd_theme",
+    "furo",
 ]
 
 # Command line scripts installed as part of the installation
