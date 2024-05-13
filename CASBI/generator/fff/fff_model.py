@@ -15,23 +15,27 @@ class SkipConnection(torch.nn.Module):
         return x + self.inner(torch.cat((x, cond), dim=1), *args, **kwargs)
     
 class FreeFormFlow(torch.nn.Module):
-    """
-    Sample a random vector v of shape (x.shape, hutchinson_samples)
-    with scaled orthonormal columns.
-
-    The reference data is used for shape, device and dtype.
+    '''
+    Class for the FreeFormFlow model.
 
     Parameters
-    ----------
-    x: 
-        Reference data.
-    hutchinson_samples: 
-        Number of Hutchinson samples to draw.
+    -----------
     
-    Return
-    ------
-    q
-    """
+    dim (int): 
+        The dimension of the input data.
+    cond_dim (int): 
+        The dimension of the conditional data.
+    hidden_dim (int): 
+        The dimension of the hidden layers.
+    latent_dim (int): 
+        The dimension of the latent space.
+    n_SC_layer (int): 
+        The number of skip connection layers.
+    beta (float): 
+        The weight for the reconstruction loss.
+    device (torch.device): 
+        The device to run the model on.
+    '''
 
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
         super().__init__()
@@ -59,7 +63,7 @@ class FreeFormFlow(torch.nn.Module):
             1)
 
     def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set, snapshot_path='./snapshot/fff_snpashot/', runs_path='./runs/fff_runs/'):
-        """
+        '''
         Train the FreeFormFlow model.
 
         Parameters
@@ -141,7 +145,7 @@ class FreeFormFlow(torch.nn.Module):
         torch.Tensor:  
             The log probability.
 
-        """
+        '''
         z = self.encoder(x, cond)
         x1, jac_dec = compute_jacobian(z, cond, self.decoder)
         log_abs_jac_det = torch.linalg.slogdet(jac_dec).logabsdet
@@ -149,7 +153,7 @@ class FreeFormFlow(torch.nn.Module):
         return x1, log_prob
 
     def sample(self, n_samples, cond):
-        """
+        '''
         Generate samples from the FreeFormFlow model.
 
         Parameters
@@ -164,7 +168,7 @@ class FreeFormFlow(torch.nn.Module):
         torch.Tensor: 
             The generated samples.
 
-        """
+        '''
         z = torch.randn(n_samples, self.latent_dim, device=self.device)
         cond = cond.to(self.device)
         return self.decoder(z, cond)
