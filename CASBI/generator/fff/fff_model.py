@@ -18,23 +18,27 @@ class FreeFormFlow(torch.nn.Module):
     '''
     Class for the FreeFormFlow model.
 
-    Parameters
-    -----------
-    
-    dim (int): 
-        The dimension of the input data.
-    cond_dim (int): 
-        The dimension of the conditional data.
-    hidden_dim (int): 
-        The dimension of the hidden layers.
-    latent_dim (int): 
-        The dimension of the latent space.
-    n_SC_layer (int): 
-        The number of skip connection layers.
-    beta (float): 
-        The weight for the reconstruction loss.
-    device (torch.device): 
-        The device to run the model on.
+    Args:
+    dim (int): The dimension of the input data.
+    cond_dim (int): The dimension of the conditional data.
+    hidden_dim (int): The dimension of the hidden layers.
+    latent_dim (int): The dimension of the latent space.
+    n_SC_layer (int): The number of skip connection layers.
+    beta (float): The weight for the reconstruction loss.
+    device (torch.device): The device to run the model on.
+
+    Attributes
+    dim (int): The dimension of the input data.
+    cond_dim (int): The dimension of the conditional data.
+    hidden_dim (int): The dimension of the hidden layers.
+    latent_dim (int): The dimension of the latent space.
+    n_SC_layer (int): The number of skip connection layers.
+    beta (float): The weight for the reconstruction loss.
+    device (torch.device): The device to run the model on.
+    best_loss (float): The best loss achieved during training.
+    encoder (SkipConnection): The encoder network.
+    decoder (SkipConnection): The decoder network.
+    latent (torch.distributions.Independent): The distribution of the latent space.
     '''
 
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
@@ -87,7 +91,7 @@ class FreeFormFlow(torch.nn.Module):
         Returns
         -------
         train_model: The trained FreeFormFlow model.
-        """
+        '''
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
         val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=False)
         writer = SummaryWriter(log_dir=runs_path)
@@ -126,7 +130,7 @@ class FreeFormFlow(torch.nn.Module):
             self.train()
 
     def log_prob(self, x, cond):
-        """
+        '''
         Compute the log probability and the reconstructed x for the given input.
 
         Parameters
