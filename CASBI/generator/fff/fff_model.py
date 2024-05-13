@@ -16,51 +16,7 @@ class SkipConnection(torch.nn.Module):
     
 class FreeFormFlow(torch.nn.Module):
     """
-    Class for the FreeFormFlow model.
-
-    Parameters
-    -----------
-    
-    dim (int): 
-        The dimension of the input data.
-    cond_dim (int): 
-        The dimension of the conditional data.
-    hidden_dim (int): 
-        The dimension of the hidden layers.
-    latent_dim (int): 
-        The dimension of the latent space.
-    n_SC_layer (int): 
-        The number of skip connection layers.
-    beta (float): 
-        The weight for the reconstruction loss.
-    device (torch.device): 
-        The device to run the model on.
-
-    Attributes
-    ----------
-    
-    dim (int): 
-        The dimension of the input data.
-    cond_dim (int): 
-        The dimension of the conditional data.
-    hidden_dim (int): 
-        The dimension of the hidden layers.
-    latent_dim (int): 
-        The dimension of the latent space.
-    n_SC_layer (int): 
-        The number of skip connection layers.
-    beta (float): 
-        The weight for the reconstruction loss.
-    device (torch.device): 
-        The device to run the model on.
-    best_loss (float): 
-        The best loss achieved during training.
-    encoder (SkipConnection): 
-        The encoder network.
-    decoder (SkipConnection): 
-        The decoder network.
-    latent (torch.distributions.Independent): 
-        The distribution of the latent space.
+    FreeFormFlow model.
     """
 
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
