@@ -16,7 +16,21 @@ class SkipConnection(torch.nn.Module):
     
 class FreeFormFlow(torch.nn.Module):
     """
-    FreeFormFlow model.
+    Sample a random vector v of shape (x.shape, hutchinson_samples)
+    with scaled orthonormal columns.
+
+    The reference data is used for shape, device and dtype.
+
+    Parameters
+    ----------
+    x: 
+        Reference data.
+    hutchinson_samples: 
+        Number of Hutchinson samples to draw.
+    
+    Return
+    ------
+    q
     """
 
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
