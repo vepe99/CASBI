@@ -472,18 +472,18 @@ class NF_condGLOW(nn.Module):
     Normalizing flow GLOW model with Affine coupling layers. Alternates coupling layers with GLOW convolutions Combines coupling layers and convolution layers.
     
     Args:
-    n_layers (int): The number of flow layers. Flow layers consist of a coupling layer and a convolution layer.
-    dim_notcond (int): The dimension of the input, i.e. the dimension of the data that will be transformed.
-    dim_cond (int) : The dimension of the condition. If 0, the coupling layer is not conditioned.
-    CL (nn.Module) : The coupling layer to use. Affine coupling layers is the only available for now
-    **kwargs_CL (dict) : The arguments for the coupling layer
+        n_layers (int): The number of flow layers. Flow layers consist of a coupling layer and a convolution layer.
+        dim_notcond (int): The dimension of the input, i.e. the dimension of the data that will be transformed.
+        dim_cond (int) : The dimension of the condition. If 0, the coupling layer is not conditioned.
+        CL (nn.Module) : The coupling layer to use. Affine coupling layers is the only available for now
+        **kwargs_CL (dict) : The arguments for the coupling layer
     
     Attributes:
-    n_layers (int): The number of flow layers. Flow layers consist of a coupling layer and a convolution layer.
-    dim_notcond (int): The dimension of the input, i.e. the dimension of the data that will be transformed.
-    dim_cond (int) : The dimension of the condition. If 0, the coupling layer is not conditioned.
-    prior(torch.distributions.MultivariateNormal): The prior distribution of the model.
-    give_kwargs (dict): The arguments for the model.
+        n_layers (int): The number of flow layers. Flow layers consist of a coupling layer and a convolution layer.
+        dim_notcond (int): The dimension of the input, i.e. the dimension of the data that will be transformed.
+        dim_cond (int) : The dimension of the condition. If 0, the coupling layer is not conditioned.
+        prior(torch.distributions.MultivariateNormal): The prior distribution of the model.
+        give_kwargs (dict): The arguments for the model.
     
     """
 
