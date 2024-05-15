@@ -27,7 +27,6 @@ extensions = [
     "nbsphinx",
     "nbsphinx_link",
     "sphinx_mdinclude",
-    "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary", 
@@ -35,7 +34,7 @@ extensions = [
 ]
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 autosummary_imported_members = False
-autodoc_mock_imports = ['torch', 'FrEIA', 'lightning']
+autodoc_mock_imports = ['FrEIA', 'lightning']
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ['_templates']
