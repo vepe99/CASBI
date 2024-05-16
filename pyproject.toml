@@ -18,7 +18,7 @@ maintainers = [
     { name = "Your Name", email = "your@email.com" },
 ]
 version = "0.0.1"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
