@@ -66,7 +66,7 @@ class FreeFormFlow(torch.nn.Module):
                                        scale=torch.ones(latent_dim, device=self.device), ),
             1)
 
-    def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set, snapshot_path='./snapshot/fff_snpashot/', runs_path='./runs/fff_runs/'):
+    def train_model(self, n_epochs, batch_size, optimizer, train_set, val_set, snapshot_path='./snapshot/fff_snapshot/', runs_path='./runs/fff_runs/'):
         '''
         Train the FreeFormFlow model.
 
@@ -79,7 +79,7 @@ class FreeFormFlow(torch.nn.Module):
             The batch size for training.
         optimizer (torch.optim.Optimizer): 
             The optimizer for training.
-        train   _set (torch.utils.data.Dataset): 
+        train_set (torch.utils.data.Dataset): 
             The training dataset.
         val_set (torch.utils.data.Dataset): 
             The validation dataset.
