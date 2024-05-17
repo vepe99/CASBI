@@ -40,7 +40,7 @@ def get_even_space_sample(df_mass_masked, N=30):
             df_time = pd.concat([df_time, df_galaxy], ignore_index=True)
     return df_time
 
-def load_train_objs(df_path:str, test_path=None, train_path=None, val_path=None ):
+def load_train_objs(df_path:str, N=30, sets_path=None):
     """
     Create training, validation and test dataset. The test set is saved in a parquet file in the path test_path.
     The validation set is saved in a parquet file in the path val_path. The training set is saved in a parquet file in the path train_path.
@@ -57,31 +57,27 @@ def load_train_objs(df_path:str, test_path=None, train_path=None, val_path=None 
     
     ### create validation set
     low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
-    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass])
-    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
-    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
+    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass], N=N)
+    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)], N=N)
+    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass], N=N)
     val_set = pd.concat([low_mass, intermediate_mass, high_mass])
-    if val_path is not None:
-        val_set.to_parquet(os.path.join(val_path, 'val_data.parquet'))
     
     ### remove validation galaxies from train set
     train_set = train_set[~train_set['Galaxy_name'].isin(val_set['Galaxy_name'])]
     
     ### create test set
     low_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
-    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass])
-    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)])
-    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass])
+    low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass], N=N)
+    intermediate_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)], N=N)
+    high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass], N=N)
     test_set = pd.concat([low_mass, intermediate_mass, high_mass])
     
-    ### save the test set 
-    if test_path is not None:
-        test_set.to_parquet(os.path.join(test_path, 'test_data.parquet'))
-    
-    ### remove the test galaxies from the train set and saves it
-    train_set = train_set[~train_set['Galaxy_name'].isin(test_set['Galaxy_name'])]
-    if train_path is not None:
-        train_set.to_parquet(os.path.join(train_path, 'training_data.parquet'))
+        
+    if sets_path is not None:
+       np.savez(os.path.join(sets_path, 'sets.npz'), 
+                val_set=val_set['Galaxy_name'].unique().astype(str), 
+                test_set=test_set['Galaxy_name'].unique().astype(str),
+                train_set=train_set['Galaxy_name'].unique().astype(str),)    
     print('finish prepare data')
 
     return train_set, val_set, test_set
