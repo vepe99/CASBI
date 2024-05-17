@@ -29,7 +29,8 @@ def get_even_space_sample(df_mass_masked, N=30):
     '''
     len_infall_time = len(df_mass_masked['infall_time'].unique())
     index_val_time = np.linspace(0, len_infall_time-1, N)
-    time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
+    # time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
+    time = df_mass_masked['infall_time'].sample(N).values
     for i, t in enumerate(time):
         temp = df_mass_masked[df_mass_masked['infall_time']==t]
         galaxy_temp = temp.sample(1)['Galaxy_name'].values[0]
