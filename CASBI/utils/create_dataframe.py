@@ -90,7 +90,7 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
     return df
 
 
-def load_data(file_path, mass_cut=6*1e9, min_n_star=float, min_feh=float, min_ofe=float, n_subsamples = 500):
+def load_data(file_path, mass_cut=6*1e9, min_n_star=float, min_feh=float, min_ofe=float, n_subsamples = 5000):
     """
     Load the data from the file_path and return a pandas dataframe with the data.
     
