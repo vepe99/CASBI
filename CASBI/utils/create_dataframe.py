@@ -12,7 +12,7 @@ GENERATION OF THE DATAFRAME
 Function to preprocess the file obtain from `CASBI.utils.prepare_file` and save the data in a dataframe.
 """
 
-def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_observations=True, scale_parameter=False) -> pd.DataFrame:
+def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_observations=True, scale_parameters=False) -> pd.DataFrame:
     """
     If save=True the columns of the dataframe are rescaled and the mean and standard deviation of the columns are saved in a .parquet file in the mean_and_std_path directory.
     If save=False, the function applies the inverse rescaling when inverse=True, or apply the same rescaling as when save=True it when inverse=False.
