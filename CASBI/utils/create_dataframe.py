@@ -54,38 +54,44 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
         mean_and_std = pd.read_parquet(mean_and_std_path)    
         if (scale_observations==True) & (scale_parameter==False):    
             if inverse==True:
-                for col in df.columns[:2]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                for col in df.columns[:2]:  
+                    if col != 'Galaxy_name': 
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns[:2]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
                     
         elif (scale_parameter==False) & (scale_observations==True):
             if inverse==True:
                 for col in df.columns[2:]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns[2:]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
         else: 
             if inverse==True:
                 for col in df.columns:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
     
     return df
 
