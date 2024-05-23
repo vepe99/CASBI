@@ -52,7 +52,7 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
     
     else:
         mean_and_std = pd.read_parquet(mean_and_std_path)    
-        if (scale_observations==True) & (scale_parameter==False):    
+        if (scale_observations==True) & (scale_parameters==False):    
             if inverse==True:
                 for col in df.columns[:2]:  
                     if col != 'Galaxy_name': 
@@ -66,7 +66,7 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
                         std  = mean_and_std.loc[0, f'std_{col}'] 
                         df[col] = (df[col] - mean) / std
                     
-        elif (scale_parameter==False) & (scale_observations==True):
+        elif (scale_parameters==False) & (scale_observations==True):
             if inverse==True:
                 for col in df.columns[2:]:   
                     if col != 'Galaxy_name':
