@@ -28,7 +28,7 @@ def get_even_space_sample(df_mass_masked, N=30):
         Dataframe with the selected galaxies
     '''
     len_infall_time = len(df_mass_masked['infall_time'].unique())
-    index_val_time = np.linspace(0, len_infall_time-1, N)
+    # index_val_time = np.linspace(0, len_infall_time-1, N)
     # time = np.sort(df_mass_masked['infall_time'].unique())[index_val_time.astype(int)]
     time = df_mass_masked['infall_time'].sample(N).values
     for i, t in enumerate(time):
@@ -57,10 +57,10 @@ def load_train_objs(df_path:str, N_val=30, N_test=30, sets_path=None):
     train_set = pd.read_parquet(df_path) 
     
     ### create validation set
-    low_percentile_mass, half_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
+    low_percentile_mass, half_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 50), np.percentile(train_set['star_log10mass'], 75)
     low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass], N=N_val)
-    intermediate_low_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<half_percentile_mass)], N=N_val)
-    intermediate_high_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>half_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)], N=N_val)
+    intermediate_low_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<=half_percentile_mass)], N=N_val)
+    intermediate_high_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>half_percentile_mass) & (train_set['star_log10mass']<=high_percentile_mass)], N=N_val)
     high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass], N=N_val)
     val_set = pd.concat([low_mass, intermediate_low_mass, intermediate_high_mass, high_mass])
     
@@ -68,10 +68,10 @@ def load_train_objs(df_path:str, N_val=30, N_test=30, sets_path=None):
     train_set = train_set[~train_set['Galaxy_name'].isin(val_set['Galaxy_name'])]
     
     ### create test set
-    low_percentile_mass,half_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 75)
+    low_percentile_mass,half_percentile_mass, high_percentile_mass = np.percentile(train_set['star_log10mass'], 25), np.percentile(train_set['star_log10mass'], 50), np.percentile(train_set['star_log10mass'], 75)
     low_mass = get_even_space_sample(train_set[train_set['star_log10mass']<=low_percentile_mass], N=N_test)
-    intermediate_low_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<half_percentile_mass)], N=N_test)
-    intermediate_high_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>half_percentile_mass) & (train_set['star_log10mass']<high_percentile_mass)], N=N_test)
+    intermediate_low_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>low_percentile_mass) & (train_set['star_log10mass']<=half_percentile_mass)], N=N_test)
+    intermediate_high_mass = get_even_space_sample(train_set[(train_set['star_log10mass']>half_percentile_mass) & (train_set['star_log10mass']<=high_percentile_mass)], N=N_test)
     high_mass = get_even_space_sample(train_set[train_set['star_log10mass']>=high_percentile_mass], N=N_test)
     test_set = pd.concat([low_mass, intermediate_low_mass, intermediate_high_mass, high_mass])
     

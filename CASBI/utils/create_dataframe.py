@@ -12,7 +12,7 @@ GENERATION OF THE DATAFRAME
 Function to preprocess the file obtain from `CASBI.utils.prepare_file` and save the data in a dataframe.
 """
 
-def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_observations=True, scale_parameter=False) -> pd.DataFrame:
+def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_observations=True, scale_parameters=False) -> pd.DataFrame:
     """
     If save=True the columns of the dataframe are rescaled and the mean and standard deviation of the columns are saved in a .parquet file in the mean_and_std_path directory.
     If save=False, the function applies the inverse rescaling when inverse=True, or apply the same rescaling as when save=True it when inverse=False.
@@ -54,38 +54,44 @@ def rescale(df, mean_and_std_path = str, inverse=False, save = False, scale_obse
         mean_and_std = pd.read_parquet(mean_and_std_path)    
         if (scale_observations==True) & (scale_parameter==False):    
             if inverse==True:
-                for col in df.columns[:2]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                for col in df.columns[:2]:  
+                    if col != 'Galaxy_name': 
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns[:2]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
                     
         elif (scale_parameter==False) & (scale_observations==True):
             if inverse==True:
                 for col in df.columns[2:]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns[2:]:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
         else: 
             if inverse==True:
                 for col in df.columns:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = df[col]*std + mean
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = df[col]*std + mean
             else:
                 for col in df.columns:   
-                    mean = mean_and_std.loc[0, f'mean_{col}'] 
-                    std  = mean_and_std.loc[0, f'std_{col}'] 
-                    df[col] = (df[col] - mean) / std
+                    if col != 'Galaxy_name':
+                        mean = mean_and_std.loc[0, f'mean_{col}'] 
+                        std  = mean_and_std.loc[0, f'std_{col}'] 
+                        df[col] = (df[col] - mean) / std
     
     return df
 

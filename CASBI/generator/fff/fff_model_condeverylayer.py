@@ -2,45 +2,52 @@ import os
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
+from torch import nn
 
 from CASBI.generator.fff.loss import  nll_surrogate
 from CASBI.generator.fff.jacobian import compute_jacobian
 
 class SkipConnection(torch.nn.Module):
-    def __init__(self, inner):
+    def __init__(self, module, cond_dim):
         super().__init__()
-        self.inner = inner
+        self.module = module
+        self.cond_dim = cond_dim
 
-    def forward(self, x, cond, *args, **kwargs):
-        return x + self.inner(torch.cat((x, cond), dim=1), *args, **kwargs)
+    def forward(self, x, cond):
+        for name, layer in self.module.named_children():
+            if isinstance(layer, torch.nn.Linear):
+                x = torch.cat((x, cond), dim=1)
+                x = layer(x)
+            else:
+                x = layer(x)
+        return x
+
+class Encoder(torch.nn.Module):
+    def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer):
+        super().__init__()
+        layers = [nn.Linear(dim + cond_dim, hidden_dim), nn.ReLU()]
+        for _ in range(n_SC_layer):
+            layers.extend([nn.Linear(hidden_dim + cond_dim, hidden_dim), nn.ReLU()])
+        layers.append(nn.Linear(hidden_dim + cond_dim, latent_dim))
+        self.layers = SkipConnection(nn.Sequential(*layers), cond_dim)
+
+    def forward(self, x, cond):
+        return self.layers(x, cond)
+
+class Decoder(torch.nn.Module):
+    def __init__(self, latent_dim, cond_dim, hidden_dim, dim, n_SC_layer):
+        super().__init__()
+        layers = [nn.Linear(latent_dim + cond_dim, hidden_dim), nn.ReLU()]
+        for _ in range(n_SC_layer):
+            layers.extend([nn.Linear(hidden_dim + cond_dim, hidden_dim), nn.ReLU()])
+        layers.append(nn.Linear(hidden_dim + cond_dim, dim))
+        self.layers = SkipConnection(nn.Sequential(*layers), cond_dim)
+
+    def forward(self, x, cond):
+        return self.layers(x, cond)
     
+
 class FreeFormFlow(torch.nn.Module):
-    """ 
-    Class for the FreeFormFlow model.
-
-    Args:
-        dim (int): The dimension of the input data.
-        cond_dim (int): The dimension of the conditional data.
-        hidden_dim (int): The dimension of the hidden layers.
-        latent_dim (int): The dimension of the latent space.
-        n_SC_layer (int): The number of skip connection layers.
-        beta (float): The weight for the reconstruction loss.
-        device (torch.device): The device to run the model on.
-
-    Attributes:
-        dim (int): The dimension of the input data.
-        cond_dim (int): The dimension of the conditional data.
-        hidden_dim (int): The dimension of the hidden layers.
-        latent_dim (int): The dimension of the latent space.
-        n_SC_layer (int): The number of skip connection layers.
-        beta (float): The weight for the reconstruction loss.
-        device (torch.device): The device to run the model on.
-        best_loss (float): The best loss achieved during training.
-        encoder (SkipConnection): The encoder network.
-        decoder (SkipConnection): The decoder network.
-        latent (torch.distributions.Independent): The distribution of the latent space.
-    """
-
     def __init__(self, dim, cond_dim, hidden_dim, latent_dim, n_SC_layer, beta, device):
         super().__init__()
         self.dim = dim
@@ -52,14 +59,9 @@ class FreeFormFlow(torch.nn.Module):
         self.device = device
         self.best_loss = 1000
 
-        encoder_SC_layers = [torch.nn.Linear(self.dim+self.cond_dim if i == 0 else self.hidden_dim, self.hidden_dim) if i % 2 == 0 else torch.nn.SiLU() for i in range(2*self.n_SC_layer - 1)]
-        encoder_SC_layers.append(torch.nn.Linear(self.hidden_dim, self.latent_dim))
+        self.encoder = Encoder(dim, cond_dim, hidden_dim, latent_dim, n_SC_layer).to(device)
+        self.decoder = Decoder(latent_dim, cond_dim, hidden_dim, dim, n_SC_layer).to(device)
 
-        decoder_SC_layers = [torch.nn.Linear(self.latent_dim+self.cond_dim if i == 0 else self.hidden_dim, self.hidden_dim) if i % 2 == 0 else torch.nn.SiLU() for i in range(2*self.n_SC_layer - 1)]
-        decoder_SC_layers.append(torch.nn.Linear(self.hidden_dim, self.dim))
-
-        self.encoder = SkipConnection(torch.nn.Sequential(*encoder_SC_layers)).to(self.device)
-        self.decoder = SkipConnection(torch.nn.Sequential(*decoder_SC_layers)).to(self.device)
 
         self.latent = torch.distributions.Independent(
             torch.distributions.Normal(loc=torch.zeros(latent_dim, device=self.device),
@@ -120,12 +122,11 @@ class FreeFormFlow(torch.nn.Module):
                     loss_reconstruction = ((x - x1) ** 2).sum(-1).mean(-1)
                     loss = self.beta*loss_reconstruction + loss_nll
                     val_running_loss += loss.mean().item()
-            val_running_loss /= len(val_loader)
-            if val_running_loss < self.best_loss:
-                self.best_loss = val_running_loss
-                save_path = os.path.join(snapshot_path, 'snapshot.pth')
-                torch.save(self.state_dict(), save_path)
-                print('Model saved at epoch', epoch, 'in file',  f'{save_path}')
+                    if val_running_loss < self.best_loss:
+                        self.best_loss = val_running_loss
+                        save_path = os.path.join(snapshot_path, 'snapshot.pth')
+                        torch.save(self.state_dict(), save_path)
+                        print('Model saved at epoch', epoch, 'in file',  f'{save_path}')
 
             writer.add_scalar('Loss/val', val_running_loss, epoch)
             self.train()
