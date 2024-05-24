@@ -152,3 +152,6 @@ events.out.tfevents.*
 *.aux
 *.log
 *.swp
+*latexmk
+*.synctex.gz
+*.fls
