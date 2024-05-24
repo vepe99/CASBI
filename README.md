@@ -1,4 +1,4 @@
-# Welcome to CASBI
+# Welcome to CASBI (Chemical Abundance Simulation Based Inference)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/casbi/badge/?version=latest)](https://casbi.readthedocs.io/en/latest/?badge=latest)
