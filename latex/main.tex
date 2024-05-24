@@ -2,6 +2,7 @@
 
 % Preamble
 \usepackage[utf8]{inputenc}
+\usepackage{cite} % Optional, for better citation formatting
 \usepackage{amsmath}
 \usepackage{graphicx}
 
@@ -17,12 +18,14 @@
 
 \include{abstract}
 \include{previous_work}
-\include{sbi}
+\include{casbi}
 \include{results}
 \include{conclusions}
 
 
 
+\bibliographystyle{plain}
+\bibliography{./MasterThesis.bib}
 \printindex % Add this command to print the index
 
 \end{document}

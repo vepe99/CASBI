@@ -155,3 +155,5 @@ events.out.tfevents.*
 *latexmk
 *.synctex.gz
 *.fls
+*.bbl
+*.blg
