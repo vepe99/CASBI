@@ -145,3 +145,10 @@ cython_debug/
 
 # tensorboard event file
 events.out.tfevents.*
+
+#latex stuff
+*.toc
+*.pdf
+*.aux
+*.log
+*.swp
