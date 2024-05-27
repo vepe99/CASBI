@@ -1,7 +1,12 @@
 \chapter{Abstract}
-
-This is the introduction chapter.
-
-This is an example of a citation \cite{bisterInferenceCosmicraySource2022}
-This is another example of a citation \cite[Buck]{buckOriginChemicalBimodality2020}
-
+Galaxies evolve trough merging events and destroy lower-mass systems over their lifetimes. The contribution that those lower-mass system brings to 
+the modern picture has been freezes in stellar halos by the long orbital timescales, making the relicts of this objects retain part of 
+their initial progenitor orbit. But dynamical information is not enough to disentangle these components, and the complementary chemical information 
+helps to characterized these building blocks. In fact, merging events tend to quench the star formation rate of these objects, making the chemical 
+abundance plane ([Fe/H] vs [O/Fe]) a distinct imprint that retains information on the conditions of formation of their stars, like the total mass and 
+the age of the system until the merging event. These theoretical background allows us to attempt to decompose the stellar halo into its components, 
+unraveling the merging history. In the modern era of large N-body galaxy simulations, we recast this problem into an SBI pipeline to recover the 
+properties of this building block, (e.g. total stellar mass, infall time, ...) using the chemical abundance plane as observables. We therefore present CASBI 
+(Chemical Abundance Simulation Based Inferece), a python package to recover the posterior probability of properties of building blocks of Milky Way 
+like galaxy's halo. Moreover, CASBI incorporate conditional neural network architectures as generator to obtain observables from parameters, smoothly 
+    interpolating on region of the parameters space that weren't fully covered during the N-body simulations.
