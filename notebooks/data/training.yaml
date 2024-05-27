@@ -1,44 +1,46 @@
-# Specify prior (same as initial proposal distribution)
-prior:
-  module: 'ili.utils'
-  class: 'Uniform'  # Using a uniform prior over 3 parameters
-  args:
-    low: [0,0,0]
-    high: [1,1,1]
-
-# Specify the embedding network to prepend the NDE (optional)
+device: cuda
 embedding_net:
-  module: 'CNN'
-  class: 'ConvNet'  # Fully-connected network
-  args: 
+  args:
     input_channel: 1
-    output_dim: 10  # activation function
-
-# Specify the inference model
+    output_dim: 10
+  class: ConvNet
+  module: CNN
 model:
-  backend: 'sbi'  # sbi or pydelfi
-  engine: 'NPE'  # Sequential Neural Posterior Estimation
-  name: "toy_NPE"  # name of the ensemble posterior
+  backend: sbi
+  engine: NPE
+  name: toy_NPE
   nets:
-    - model: 'maf'  # Masked Autoregressive Flow
-      hidden_features: 100  
-      num_transforms: 5  # number of flow transformations
-      signature: "m1"
-
-    
-# Specify the neural training hyperparameters
+  - hidden_features: 100
+    model: maf
+    num_transforms: 5
+    signature: m1
+out_dir: ./
+prior:
+  args:
+    high:
+    - 9.28852311340495
+    - 9.28852311340495
+    - 9.28852311340495
+    - 14.45497923316999
+    - 14.45497923316999
+    - 14.45497923316999
+    - 14.152306184479944
+    - 14.152306184479944
+    - 14.152306184479944
+    low:
+    - 4.842449480387966
+    - 4.842449480387966
+    - 4.842449480387966
+    - 8.358227496708977
+    - 8.358227496708977
+    - 8.358227496708977
+    - 1.1525002894180059
+    - 1.1525002894180059
+    - 1.1525002894180059
+  class: Uniform
+  module: ili.utils
 train_args:
-  # Adam optimizer
-  training_batch_size: 32  # batch size for training
-  learning_rate: 0.0005  # learning rate
-  # clip_max_norm: 5.0  # maximum gradient norm for gradient clipping
-
-  # Early stopping
-  validation_fraction: 0.1  # fraction of training data to use for validation
-  stop_after_epochs: 20  # stop after this many epochs without improvement
-
-  # Sequential learning
-  # num_round: 5  # number of rounds of simulations
-
-device: 'cuda'  # Run on CPU
-out_dir: './'  # Where to save the posterior
+  learning_rate: 0.0005
+  stop_after_epochs: 20
+  training_batch_size: 1024
+  validation_fraction: 0.1
