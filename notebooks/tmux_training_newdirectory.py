@@ -48,24 +48,34 @@ def create_directory_and_save_files(base_dir, hyperparameters):
 
 
 hyperparameters = {
-    'N':150, 
+    'N_val':200,
+    'N_test':30, 
     'dim': 2,
-    'cond_dim': 6,
-    'hidden_dim': 256,
+    'cond_dim': 4,
+    'hidden_dim': 128,
     'latent_dim': 2,
     'n_SC_layer': 8,
-    'beta': 100*2,
+    'beta': 100**2,
     'device': 'cuda:{}'.format(args.device),
-    'n_epochs': 400,
+    'n_epochs': 200,
     'batch_size': 1024,
+    'full_dataset': False,
+    'independent_conditioning': True,
 }
 
 new_dir_path, new_tensorboard_path = create_directory_and_save_files('/export/home/vgiusepp/data/tuning', hyperparameters)
-train_set, val_set, test_set = load_train_objs('../../data/dataframe/dataframe.parquet', N=hyperparameters['N'], sets_path=new_dir_path)
+if hyperparameters['full_dataset']:
+    train_set, val_set, test_set = load_train_objs('../../data/full_dataframe/dataframe/dataframe.parquet', N_val=hyperparameters['N_val'], N_test=hyperparameters['N_test'])
+else:
+    train_set, val_set, test_set = load_train_objs('../../data/dataframe/dataframe_2.parquet', N_val=hyperparameters['N_val'], N_test=hyperparameters['N_test'], sets_path=new_dir_path)
 
 test_set = test_set[train_set.columns.difference(['Galaxy_name'], sort=False)]
-train_set = train_set[train_set.columns.difference(['a','redshift', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
-val_set = val_set[train_set.columns.difference(['a','redshift', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
+if hyperparameters['independent_conditioning']:
+    train_set = train_set[train_set.columns.difference([ 'a','redshift', 'mean_metallicity', 'std_metallicity', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
+    val_set = val_set[train_set.columns.difference(['a','redshift', 'mean_metallicity', 'std_metallicity', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
+else:
+    train_set = train_set[train_set.columns.difference(['a','redshift', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
+    val_set = val_set[train_set.columns.difference(['a','redshift', 'mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac', 'Galaxy_name'], sort=False)]
 test_set = torch.from_numpy(np.array(test_set.values, dtype=float))
 val_set = torch.from_numpy(np.array(val_set.values, dtype=float))
 train_set = torch.from_numpy(np.array(train_set.values, dtype=float))
