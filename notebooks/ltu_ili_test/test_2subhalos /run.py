@@ -1,5 +1,6 @@
 import os
 import argparse
+import yaml
 import numpy as np
 import pandas as pd
 from multiprocessing import Pool
@@ -12,7 +13,7 @@ from CASBI.utils.create_dataframe import rescale
 
 if __name__ == '__main__':
 
-    N_subhalos = 3
+    N_subhalos = 2
     data = pd.read_parquet('../../../../data/dataframe/dataframe.parquet')
     data = rescale(data, mean_and_std_path='../../../../data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameter=True, inverse=True) 
     data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
@@ -46,6 +47,7 @@ if __name__ == '__main__':
             
     write_to_yaml(repeat_minimum_theta, repeat_maximum_theta)
     print('write the right prior in the training.yaml file')
+    
     
     galaxies_0 = data['Galaxy_name'].sample(N_subhalos)
     data_to_plot_halos = data[data['Galaxy_name'].isin(galaxies_0)].to_parquet('./halos_0.parquet')
