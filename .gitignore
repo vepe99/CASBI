@@ -151,5 +151,8 @@ events.out.tfevents.*
 *.npy 
 *.npz
 
+#pandas 
+*.parquet
+
 #images
 *.png
