@@ -10,26 +10,18 @@ model:
   engine: NPE
   name: toy_NPE
   nets:
-  - hidden_features: 50
+  - hidden_features: 100
     model: maf
     num_transforms: 10
     signature: m1
-  - hidden_features: 50
+  - hidden_features: 100
     model: maf
     num_transforms: 10
     signature: m2
-  - hidden_features: 50
+  - hidden_features: 100
     model: maf
     num_transforms: 10
     signature: m3
-  - hidden_features: 50
-    model: nsf
-    num_transforms: 10
-    signature: m4
-  - hidden_features: 10
-    model: nsf
-    num_transforms: 10
-    signature: m5
 out_dir: ./
 prior:
   args:
