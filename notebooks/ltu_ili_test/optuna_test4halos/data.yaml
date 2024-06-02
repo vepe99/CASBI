@@ -1,0 +1,10 @@
+# StaticNumpyLoader configuration
+
+in_dir: './'  # contains x_file and theta_file
+
+x_file: 'x.npy'
+theta_file: 'theta.npy'
+
+
+xobs_file: 'x_0.npy'
+thetafid_file: 'theta_0.npy'

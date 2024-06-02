@@ -49,10 +49,12 @@ if __name__ == '__main__':
     write_to_yaml(repeat_minimum_theta, repeat_maximum_theta)
     print('write the right prior in the training.yaml file')
     
-    N_test = 10
+    N_test = 1_000
     def preprocess_testset(i):
         galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=i))
-        parameters =  data[data['Galaxy_name'].isin(galaxies)].drop(['feh', 'ofe', 'Galaxy_name'], axis=1).drop_duplicates().values.T.reshape(-1)
+        parameters =  data[data['Galaxy_name'].isin(galaxies)].drop(['feh', 'ofe', 'Galaxy_name'], axis=1).drop_duplicates().values.T#.reshape(-1)
+        sorted_index = np.argsort(parameters[0], )[::-1]
+        parameters = (parameters[:,sorted_index]).reshape(-1)
         galaxy_data = data[data['Galaxy_name'].isin(galaxies)].values
         histogram_galaxy, _, _ = np.histogram2d(galaxy_data[:, 0], galaxy_data[:, 1], bins=64, range=[[min_feh, max_feh], [min_ofe, max_ofe]])
         sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)

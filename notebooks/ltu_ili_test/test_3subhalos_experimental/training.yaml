@@ -2,7 +2,7 @@ device: cuda
 embedding_net:
   args:
     input_channel: 1
-    output_dim: 10
+    output_dim: 128
   class: ConvNet
   module: CNN
 model:
@@ -10,21 +10,21 @@ model:
   engine: NPE
   name: toy_NPE
   nets:
-  - hidden_features: 50
-    model: maf
-    num_transforms: 10
+  - hidden_features: 100
+    model: nsf
+    num_transforms: 20
     signature: m1
-  - hidden_features: 50
-    model: maf
-    num_transforms: 10
+  - hidden_features: 100
+    model: nsf
+    num_transforms: 20
     signature: m2
-  - hidden_features: 50
+  - hidden_features: 100
     model: nsf
-    num_transforms: 5
+    num_transforms: 20
     signature: m3
-  - hidden_features: 50
+  - hidden_features: 100
     model: nsf
-    num_transforms: 5
+    num_transforms: 20
     signature: m4
 out_dir: ./
 prior:

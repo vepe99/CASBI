@@ -156,3 +156,6 @@ events.out.tfevents.*
 
 #images
 *.png
+
+#optuna 
+*.db

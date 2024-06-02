@@ -2,7 +2,7 @@ device: cuda
 embedding_net:
   args:
     input_channel: 1
-    output_dim: 10
+    output_dim: 64
   class: ConvNet
   module: CNN
 model:
@@ -10,18 +10,22 @@ model:
   engine: NPE
   name: toy_NPE
   nets:
-  - hidden_features: 100
-    model: maf
-    num_transforms: 10
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
     signature: m1
-  - hidden_features: 100
-    model: maf
-    num_transforms: 10
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
     signature: m2
-  - hidden_features: 100
-    model: maf
-    num_transforms: 10
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
     signature: m3
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
+    signature: m4
 out_dir: ./
 prior:
   args:
@@ -42,7 +46,7 @@ prior:
   class: Uniform
   module: ili.utils
 train_args:
-  learning_rate: 0.0005
+  learning_rate: 0.0001
   stop_after_epochs: 20
-  training_batch_size: 1024
-  validation_fraction: 0.1
+  training_batch_size: 256
+  validation_fraction: 0.2
