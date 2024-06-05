@@ -1,0 +1,1 @@
+#stores embedding network, remember that the training.yaml should look into here to get the embedding network
