@@ -51,7 +51,6 @@ if __name__ == '__main__':
     # Unpack the results
     N_subhalos_test, x_test, galaxies_test = zip(*results)
     
-    N_subhalos_test = np.array(N_subhalos_test)-2 #so now it starts from 0 to 98, to encode from 2 to 100 subhalos
     N_subhalos_test = N_subhalos_test.reshape((len(N_subhalos_test), 1))  
     
     #take the first test set element as x_0 and theta_0    
@@ -84,7 +83,6 @@ if __name__ == '__main__':
 
     # Unpack the results
     N_subhalos, x = zip(*results)
-    N_subhalos = np.array(N_subhalos)-2 #so now it starts from 0 to 98, to encode from 2 to 100 subhalos
     N_subhalos = N_subhalos.reshape((len(N_subhalos), 1))
     
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0')
