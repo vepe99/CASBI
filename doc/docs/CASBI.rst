@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    CASBI.generator
+   CASBI.sbi
    CASBI.utils
 
 Module contents

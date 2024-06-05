@@ -1,6 +1,4 @@
 #generate trainig and data yaml file
-import yaml 
-
 import yaml
 
 def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:str='theta.npy', xobs_file:str='x_0.npy', thetafid_file:str='theta_0.npy'):
