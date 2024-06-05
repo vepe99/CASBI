@@ -22,3 +22,53 @@ def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:
     }
     with open(filepath, 'w') as file:
         yaml.dump(data_yaml, file)
+        
+def generate_training_yaml(filepath:str):
+    """
+    Create the training.yaml file to use as input for the training process. This function create a yaml file that should be customize by the user.
+
+    Args:
+        filepath (str): The path where yaml file will be stored.
+    """
+    training_yaml = {
+        "device": "cuda",
+        "embedding_net": {
+            "args": {
+                "input_channel": 1,
+                "output_dim": 64
+            },
+            "class": "ConvNet",
+            "module": "CNN_skip"
+        },
+        "model": {
+            "backend": "sbi",
+            "engine": "NPE",
+            "name": "toy_NPE",
+            "nets": [
+                {
+                    "hidden_features": 50,
+                    "model": "maf",
+                    "num_transforms": 5,
+                    "signature": "m1"
+                },
+            ]
+        },
+        "out_dir": "./",
+        "prior": {
+            "args": {
+                "high": [100.0],
+                "low": [2.0]
+            },
+            "class": "Uniform",
+            "module": "ili.utils"
+        },
+        "train_args": {
+            "learning_rate": 0.0001,
+            "stop_after_epochs": 20,
+            "training_batch_size": 64,
+            "validation_fraction": 0.2
+        }
+    }
+
+    with open(filepath, 'w') as file:
+        yaml.dump(training_yaml, file)
