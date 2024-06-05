@@ -79,6 +79,7 @@ packages = [
     "CASBI.generator.nf",
     "CASBI.generator.fff",
     "CASBI.utils",
+    "CASBI.sbi",
 ]
 
 # The following is the configuration for the pytest test suite
