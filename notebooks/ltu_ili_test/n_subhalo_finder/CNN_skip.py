@@ -11,12 +11,14 @@ class ConvNet(nn.Module):
         self.downsample3 = nn.Conv2d(16, 32, 1)  # 1x1 conv
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        # ... rest of your code
+        self.fc1 = nn.Linear(32 * 8 * 8, 265)  # Adjust the dimension according to your input size
+        self.fc2 = nn.Linear(265, 128)
+        self.fc3 = nn.Linear(128, 64)
+        self.fc4 = nn.Linear(64, output_dim)
+        self.fc =  nn.Sequential(self.fc1, self.relu, self.fc2, self.relu, self.fc3, self.relu, self.fc4)
 
     def forward(self, x):
         residual = self.maxpool(self.downsample1(x))
-        # print('residual shape:', residual.shape)
-        # print('x shape:', x.shape)
         out = self.conv1(x)
         out = self.relu(out)
         out = self.maxpool(out)
@@ -34,4 +36,7 @@ class ConvNet(nn.Module):
         out = self.maxpool(out)
         out += residual  # Skip connection
 
-        # ... rest of your code
+        out = out.view(out.size(0), -1)  # Flatten the tensor
+        out = self.fc(out)  # Pass it through the fully connected layer
+
+        return out
