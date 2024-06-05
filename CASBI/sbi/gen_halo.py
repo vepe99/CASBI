@@ -77,6 +77,18 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     n_test (int): number of test samples, it will be used to generate n_test samples for each number of subhalos from 2 to max_subhalos
     n_train (int): number of training samples, it will be used to generate n_train samples for each number of subhalos from 2 to max_subhalos
     max_subhalos (int): maximum number of subhalos
+    
+    Returns:
+    N_subhalos_test (np.array): number of subhalos for the test set
+    parameters_test (np.array): parameters of the subhalos for the test set
+    x_test (np.array): simulated data for the test set
+    galaxies_test (np.array): list of galaxies for the test set
+    N_subhalos_0 (np.array): number of subhalos for the first test set element
+    x_0 (np.array): simulated data for the first test set element
+    N_subhalos (np.array): number of subhalos for the training set
+    parameters (np.array): parameters of the subhalos for the training set
+    x (np.array): simulated data for the training set
+    galaxies_training (np.array): list of galaxies for the training set
     """
 
     data = pd.read_parquet(data_file)
@@ -122,6 +134,8 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     np.save(output_dir+'N_subhalos.npy', N_subhalos)
     print('finish prepare the data')
     
+    return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
+    
 def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_train:int, N_subhalos:int):
     """
     Generate the galaxy halo to train the inference on the parameters of the subhalos.
@@ -132,6 +146,18 @@ def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_trai
     n_test (int): number of test samples 
     n_train (int): number of training samples
     N_subhalos (int): number of subhalos, should be output of the inference part on the number of subhalos
+    
+    Returns:
+    N_subhalos_test (np.array): number of subhalos for the test set
+    theta_test (np.array): parameters of the subhalos for the test set
+    x_test (np.array): simulated data for the test set
+    galaxies_test (np.array): list of galaxies for the test set
+    N_subhalos_0 (np.array): number of subhalos for the first test set element
+    theta_0 (np.array): parameters of the subhalos for the first test set element
+    N_subhalos (np.array): number of subhalos for the training set
+    theta (np.array): parameters of the subhalos for the training set
+    x (np.array): simulated data for the training set
+    galaxies_training (np.array): list of galaxies for the training set
     """
     data = pd.read_parquet(data_file)
     data = rescale(data, mean_and_std_path='../../../../data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameter=True, inverse=True) 
@@ -195,4 +221,5 @@ def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_trai
     np.save('./x.npy', x)
     np.save('./theta.npy', theta)
     print('finish prepare the data')
+    return N_subhalos_test, theta_test, x_test, galaxies_test, N_subhalos, theta, x, galaxies
     

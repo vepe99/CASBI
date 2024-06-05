@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Unpack the results
     N_subhalos_test, x_test, galaxies_test = zip(*results)
     
-    N_subhalos_test = N_subhalos_test.reshape((len(N_subhalos_test), 1))  
+    N_subhalos_test = np.array(N_subhalos_test).reshape((len(N_subhalos_test), 1))  
     
     #take the first test set element as x_0 and theta_0    
     galaxies_0 = galaxies_test[0]
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         histogram_galaxy, _, _ = np.histogram2d(galaxy_data[:, 0], galaxy_data[:, 1], bins=64, range=[[min_feh, max_feh], [min_ofe, max_ofe]])
         sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)
         return N_subhalos, sim_data
-    arr = np.concatenate([np.repeat(i, 100) for i in range(2, 101)])
+    arr = np.concatenate([np.repeat(i, 500) for i in range(2, 101)])
     np.random.shuffle(arr)
     # Create a pool of workers
     with Pool() as pool:
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     # Unpack the results
     N_subhalos, x = zip(*results)
-    N_subhalos = N_subhalos.reshape((len(N_subhalos), 1))
+    N_subhalos = np.array(N_subhalos).reshape((len(N_subhalos), 1))
     
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0')
     path = '../../../../../../data/vgiusepp/'
