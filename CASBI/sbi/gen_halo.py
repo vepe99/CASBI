@@ -32,7 +32,26 @@ from ili.validation import ValidationRunner
 from CASBI.utils.create_dataframe import rescale
 
 def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, max_feh, min_ofe, max_ofe, random_state:int):
-    # N_subhalos = np.random.randint(2, 101)
+    """
+    Function to genereate one halo for a given number of subhalos. If train=True, the function will check if each of the sets of subhalos is already present in the test set, and if so, it will generate a new set of subhalos.
+    Args:
+    data (pd.DataFrame): dataframe containing the data
+    N_subhalos (int): number of subhalos
+    train (bool): if True, check if the set of subhalos is already present in the test set
+    galaxies_test (np.array): test set of galaxies
+    min_feh (float): minimum value of feh
+    max_feh (float): maximum value of feh
+    min_ofe (float): minimum value of ofe
+    max_ofe (float): maximum value of ofe
+    random_state (int): random state to generate the subhalos
+    
+    Returns:
+    N_subhalos (int): number of subhalos
+    parameters (np.array): parameters of the subhalos
+    sim_data (np.array): simulated data
+    galaxies (np.array): list of galaxies
+    
+    """
     galaxies = data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state)
     if train: #if training check wheter or not those galaxy are present in the galaxy test set 
         while (any(set(galaxies) == galaxy_in_testset for galaxy_in_testset in galaxies_test)):
@@ -41,14 +60,24 @@ def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, m
             print('test galaxies', galaxies_test)
             galaxies = data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=int(time.time()))
     parameters =  data[data['Galaxy_name'].isin(galaxies)].drop(['feh', 'ofe', 'Galaxy_name'], axis=1).drop_duplicates().values.T
-    sorted_index = np.argsort(parameters[0], )[::-1]
+    sorted_index = np.argsort(parameters[0], )[::-1] #orders the parameters in descending order of star mass
     parameters = (parameters[:,sorted_index]).reshape(-1)
     galaxy_data = data[data['Galaxy_name'].isin(galaxies)].values
     histogram_galaxy, _, _ = np.histogram2d(galaxy_data[:, 0], galaxy_data[:, 1], bins=64, range=[[min_feh, max_feh], [min_ofe, max_ofe]])
     sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)
-    return N_subhalos, sim_data, galaxies
+    return N_subhalos, parameters, sim_data, galaxies
 
 def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_train:int, max_subhalos:int=100, ):
+    """
+    Generate the galaxy halo to train the inference on the number of subhalos N.
+    Args:
+    data_file (str): path to the data file
+    rescale_file (str): path to the mean and std file to rescale the observations and give the right boundaries to the histograms
+    output_dir (str): path to the output directory where to store the data, important to separete it from the gen_halo function output directory
+    n_test (int): number of test samples, it will be used to generate n_test samples for each number of subhalos from 2 to max_subhalos
+    n_train (int): number of training samples, it will be used to generate n_train samples for each number of subhalos from 2 to max_subhalos
+    max_subhalos (int): maximum number of subhalos
+    """
 
     data = pd.read_parquet(data_file)
     data = rescale(data, mean_and_std_path=rescale_file, scale_observations=True, scale_parameters=True, inverse=True) 
@@ -61,11 +90,10 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, n_subhalos, False, None, min_feh, max_feh, min_ofe, max_ofe, n_subhalos) for n_subhalos in arr])
+        results = pool.starmap(gen_onehalo, [(data, n_subhalos, False, None, min_feh, max_feh, min_ofe, max_ofe, n_subhalos) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
         
     # Unpack the results
-    N_subhalos_test, x_test, galaxies_test = zip(*results)
-
+    N_subhalos_test, parameters_test, x_test, galaxies_test = zip(*results)
     N_subhalos_test = np.array(N_subhalos_test).reshape((len(N_subhalos_test), 1))  
 
     #take the first test set element as x_0 and theta_0    
@@ -79,10 +107,10 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, n_subhalos, True, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, n_subhalos) for n_subhalos in arr])
+        results = pool.starmap(gen_onehalo, [(data, n_subhalos, True, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, n_subhalos) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
 
     # Unpack the results
-    N_subhalos, x, galaxies_training = zip(*results)
+    N_subhalos, parameters, x, galaxies_training = zip(*results)
     N_subhalos = np.array(N_subhalos).reshape((len(N_subhalos), 1))
 
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0')
@@ -95,6 +123,16 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     print('finish prepare the data')
     
 def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_train:int, N_subhalos:int):
+    """
+    Generate the galaxy halo to train the inference on the parameters of the subhalos.
+    Args:
+    data_file (str): path to the data file
+    rescale_file (str): path to the mean and std file to rescale the observations and give the right boundaries to the histograms
+    output_dir (str): path to the output directory where to store the data, important to separete it from the gen_halo_Nsubhalos function output directory
+    n_test (int): number of test samples 
+    n_train (int): number of training samples
+    N_subhalos (int): number of subhalos, should be output of the inference part on the number of subhalos
+    """
     data = pd.read_parquet(data_file)
     data = rescale(data, mean_and_std_path='../../../../data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameter=True, inverse=True) 
     data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
@@ -130,10 +168,10 @@ def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_trai
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, N_subhalos, False, None, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_test)])
+        results = pool.starmap(gen_onehalo, [(data, N_subhalos, False, None, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
         
     # Unpack the results
-    theta_test, x_test, galaxies_test = zip(*results)
+    N_subhalos_test, theta_test, x_test, galaxies_test = zip(*results)
     
     #take the first test set element as x_0 and theta_0    
     galaxies_0 = galaxies_test[0]
@@ -145,9 +183,9 @@ def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_trai
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, N_subhalos, True, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_train)])
+        results = pool.starmap(gen_onehalo, [(data, N_subhalos, True, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_train)]) #the index i is passed as random state to generate the subhalos
     # Unpack the results
-    theta, x = zip(*results)
+    N_subhalos, theta, x, galaxies = zip(*results)
     
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0
     np.save('./x_test.npy', x_test[1:])
