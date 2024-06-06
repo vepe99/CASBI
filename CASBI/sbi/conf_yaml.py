@@ -18,7 +18,7 @@ def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:
         "x_file": x_file,
         "theta_file": theta_file,
         "xobs_file": xobs_file,
-        "theta_fid": thetafid_file
+        "thetafid_file": thetafid_file
     }
     with open(filepath, 'w') as file:
         yaml.dump(data_yaml, file)
@@ -38,7 +38,7 @@ def generate_training_yaml(filepath:str):
                 "output_dim": 64
             },
             "class": "ConvNet",
-            "module": "CNN_skip"
+            "module": "CNN"
         },
         "model": {
             "backend": "sbi",
