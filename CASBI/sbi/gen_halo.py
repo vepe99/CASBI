@@ -67,12 +67,11 @@ def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, m
     sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)
     return N_subhalos, parameters, sim_data, galaxies
 
-def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_train:int, max_subhalos:int=100, ):
+def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, max_subhalos:int=100, ):
     """
     Generate the galaxy halo to train the inference on the number of subhalos N.
     Args:
-    data_file (str): path to the data file
-    rescale_file (str): path to the mean and std file to rescale the observations and give the right boundaries to the histograms
+    data (pd.DataFrame): dataframe with observation and parameters already rescaled to physical values
     output_dir (str): path to the output directory where to store the data, important to separete it from the gen_halo function output directory
     n_test (int): number of test samples, it will be used to generate n_test samples for each number of subhalos from 2 to max_subhalos
     n_train (int): number of training samples, it will be used to generate n_train samples for each number of subhalos from 2 to max_subhalos
@@ -91,9 +90,9 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     galaxies_training (np.array): list of galaxies for the training set
     """
 
-    data = pd.read_parquet(data_file)
-    data = rescale(data, mean_and_std_path=rescale_file, scale_observations=True, scale_parameters=True, inverse=True) 
-    data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
+    # data = pd.read_parquet(data_file)
+    # data = rescale(data, mean_and_std_path=rescale_file, scale_observations=True, scale_parameters=True, inverse=True) 
+    # data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
     min_feh, max_feh = min(data['feh']), max(data['feh'])
     min_ofe, max_ofe = min(data['ofe']), max(data['ofe'])
 
@@ -136,12 +135,11 @@ def gen_halo_Nsubhalos(data_file:str, rescale_file:str, output_dir:str, n_test:i
     
     return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
     
-def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_train:int, N_subhalos:int):
+def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subhalos:int):
     """
     Generate the galaxy halo to train the inference on the parameters of the subhalos.
     Args:
-    data_file (str): path to the data file
-    rescale_file (str): path to the mean and std file to rescale the observations and give the right boundaries to the histograms
+    data (pd.DataFrame): dataframe with observation and parameters already rescaled to physical values
     output_dir (str): path to the output directory where to store the data, important to separete it from the gen_halo_Nsubhalos function output directory
     n_test (int): number of test samples 
     n_train (int): number of training samples
@@ -159,9 +157,9 @@ def gen_halo(data_file:str, rescale_file:str, output_dir:str, n_test:int, n_trai
     x (np.array): simulated data for the training set
     galaxies_training (np.array): list of galaxies for the training set
     """
-    data = pd.read_parquet(data_file)
-    data = rescale(data, mean_and_std_path='../../../../data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameter=True, inverse=True) 
-    data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
+    # data = pd.read_parquet(data_file)
+    # data = rescale(data, mean_and_std_path=rescale_file, scale_observations=True, scale_parameter=True, inverse=True) 
+    # data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
     min_feh, max_feh = min(data['feh']), max(data['feh'])
     min_ofe, max_ofe = min(data['ofe']), max(data['ofe'])
     conditions = data[data.columns.difference(['feh', 'ofe', 'Galaxy_name'], sort=False)].drop_duplicates()
