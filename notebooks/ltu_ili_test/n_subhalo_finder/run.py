@@ -74,7 +74,7 @@ if __name__ == '__main__':
         histogram_galaxy, _, _ = np.histogram2d(galaxy_data[:, 0], galaxy_data[:, 1], bins=64, range=[[min_feh, max_feh], [min_ofe, max_ofe]])
         sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)
         return N_subhalos, sim_data
-    arr = np.concatenate([np.repeat(i, 500) for i in range(2, 101)])
+    arr = np.concatenate([np.repeat(i, 1000) for i in range(2, 101)])
     np.random.shuffle(arr)
     # Create a pool of workers
     with Pool() as pool:

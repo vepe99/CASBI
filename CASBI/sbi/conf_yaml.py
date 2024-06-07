@@ -23,7 +23,7 @@ def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:
     with open(filepath, 'w') as file:
         yaml.dump(data_yaml, file)
         
-def generate_training_yaml(filepath:str, output_file:str ):
+def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=100, num_transforms:int=10):
     """
     Create the training.yaml file to use as input for the training process. This function create a yaml file that should be customize by the user.
 
@@ -46,10 +46,16 @@ def generate_training_yaml(filepath:str, output_file:str ):
             "name": f"{output_file}",
             "nets": [
                 {
-                    "hidden_features": 100,
-                    "model": "nsf",
-                    "num_transforms": 10,
+                    "hidden_features": hidden_feature,
+                    "model": "maf",
+                    "num_transforms": num_transforms,
                     "signature": "m1"
+                },
+                {
+                    "hidden_features": hidden_feature,
+                    "model": "maf",
+                    "num_transforms": num_transforms,
+                    "signature": "m2"
                 },
             ]
         },
@@ -63,7 +69,7 @@ def generate_training_yaml(filepath:str, output_file:str ):
             "module": "ili.utils"
         },
         "train_args": {
-            "learning_rate": 0.0001,
+            "learning_rate": 0.0005,
             "stop_after_epochs": 20,
             "training_batch_size": 1024,
             "validation_fraction": 0.2
