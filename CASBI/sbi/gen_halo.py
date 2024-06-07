@@ -55,7 +55,7 @@ def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, m
     if train==False:
         galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state))
     else:
-        galaxies = data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state)
+        galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state))
     if train: #if training check wheter or not those galaxy are present in the galaxy test set 
         while (any(set(galaxies) == galaxy_in_testset for galaxy_in_testset in galaxies_test)):
             print('matched galaxies, try again')
@@ -140,7 +140,7 @@ def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:in
     
     return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
     
-def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subhalos:int):
+def gen_halo(data:pd.DataFrame, output_dir:str, training_yaml:str, n_test:int, n_train:int, N_subhalos:int):
     """
     Generate the galaxy halo to train the inference on the parameters of the subhalos.
     Args:
@@ -179,18 +179,18 @@ def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subha
     repeat_minimum_theta = np.repeat(minimum_theta, N_subhalos)
     repeat_maximum_theta = np.repeat(maximum_theta, N_subhalos) 
 
-    with open('./training.yaml', 'r') as file:
-        data = yaml.safe_load(file)
+    with open(training_yaml, 'r') as file:
+        yaml_file = yaml.safe_load(file)
 
     repeat_minimum_theta = repeat_minimum_theta.tolist()
     repeat_maximum_theta = repeat_maximum_theta.tolist()
     # Update the value
-    data['prior']['args']['low'] = repeat_minimum_theta
-    data['prior']['args']['high'] = repeat_maximum_theta
+    yaml_file['prior']['args']['low'] = repeat_minimum_theta
+    yaml_file['prior']['args']['high'] = repeat_maximum_theta
 
     # Write the data back to the file
-    with open('./training.yaml', 'w') as file:
-        yaml.safe_dump(data, file)
+    with open(training_yaml, 'w') as file:
+        yaml.safe_dump(yaml_file, file)
             
     print('write the right prior in the training.yaml file')
     
@@ -198,7 +198,7 @@ def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subha
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe,  int(time.time())) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
         
     # Unpack the results
     N_subhalos_test, theta_test, x_test, galaxies_test = zip(*results)
