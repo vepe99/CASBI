@@ -78,7 +78,7 @@ def evaluate_posterior(posterior, observation_path:str, parameter_path:str, labe
         out_dir=None)
     fig = metric(
         posterior=posterior,
-        x_obs=torch.from_numpy(np.load(observation_path)).to('cuda'), theta_fid=torch.from_numpy(np.load(parameter_path)).to('cuda'))
+        x_obs=torch.from_numpy(np.load(observation_path)), theta_fid=torch.from_numpy(np.load(parameter_path)))
     
     return fig
 

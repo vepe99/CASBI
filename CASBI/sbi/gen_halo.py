@@ -128,12 +128,14 @@ def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:in
     N_subhalos = np.array(N_subhalos).reshape((len(N_subhalos), 1))
 
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0')
-    np.save(output_dir+'x_test.npy', x_test[1:])
-    np.save(output_dir+'N_subhalos_test.npy', N_subhalos_test[1:])
-    np.save(output_dir+'x_0.npy', x_0)
-    np.save(output_dir+'N_subhalos_0.npy', N_subhalos_0)
-    np.save(output_dir+'x.npy', x)
-    np.save(output_dir+'N_subhalos.npy', N_subhalos)
+    np.save(os.path.join(output_dir,'x_test.npy'), x_test[1:])
+    np.save(os.path.join(output_dir,'N_subhalos_test.npy'), N_subhalos_test[1:])
+    np.save(os.path.join(output_dir,'x_0.npy'), x_0)
+    np.save(os.path.join(output_dir,'N_subhalos_0.npy'), N_subhalos_0)
+    np.save(os.path.join(output_dir,'parameters_0.npy'), parameters_test[0])
+    np.save(os.path.join(output_dir,'galaxy_0.npy'), galaxies_0)
+    np.save(os.path.join(output_dir,'x.npy'), x)
+    np.save(os.path.join(output_dir,'N_subhalos.npy'), N_subhalos)
     print('finish prepare the data')
     
     return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
@@ -163,7 +165,7 @@ def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subha
     # data = pd.read_parquet(data_file)
     # data = rescale(data, mean_and_std_path=rescale_file, scale_observations=True, scale_parameter=True, inverse=True) 
     # data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
-    print('ruuning gen halo')
+    print('running gen halo')
     min_feh, max_feh = min(data['feh']), max(data['feh'])
     min_ofe, max_ofe = min(data['ofe']), max(data['ofe'])
     conditions = data[data.columns.difference(['feh', 'ofe', 'Galaxy_name'], sort=False)].drop_duplicates()
@@ -216,12 +218,12 @@ def gen_halo(data:pd.DataFrame, output_dir:str, n_test:int, n_train:int, N_subha
     N_subhalos, theta, x, galaxies = zip(*results)
     
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0
-    np.save('./x_test.npy', x_test[1:])
-    np.save('./theta_test.npy', theta_test[1:])
-    np.save('./x_0.npy', x_0)
-    np.save('./theta_0.npy', theta_0)
-    np.save('./x.npy', x)
-    np.save('./theta.npy', theta)
+    np.save(os.path.join(output_dir,'./x_test.npy'), x_test[1:])
+    np.save(os.path.join(output_dir, './theta_test.npy'), theta_test[1:])
+    np.save(os.path.join(output_dir,'./x_0.npy'), x_0)
+    np.save(os.path.join(output_dir,'./theta_0.npy'), theta_0)
+    np.save(os.path.join(output_dir,'./x.npy'), x)
+    np.save(os.path.join(output_dir,'./theta.npy'), theta)
     print('finish prepare the data')
     return N_subhalos_test, theta_test, x_test, galaxies_test, N_subhalos, theta, x, galaxies
     
