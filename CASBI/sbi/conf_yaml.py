@@ -47,15 +47,27 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
             "nets": [
                 {
                     "hidden_features": hidden_feature,
-                    "model": "maf",
+                    "model": "nsf",
                     "num_transforms": num_transforms,
                     "signature": "m1"
                 },
                 {
                     "hidden_features": hidden_feature,
-                    "model": "maf",
+                    "model": "nsf",
                     "num_transforms": num_transforms,
                     "signature": "m2"
+                },
+                {
+                    "hidden_features": hidden_feature,
+                    "model": "nsf",
+                    "num_transforms": num_transforms,
+                    "signature": "m3"
+                },
+                {
+                    "hidden_features": hidden_feature,
+                    "model": "nsf",
+                    "num_transforms": num_transforms,
+                    "signature": "m4"
                 },
             ]
         },
