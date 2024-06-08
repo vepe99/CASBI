@@ -51,7 +51,7 @@ def create_subfolders_and_run(base_dir):
         
         # loading and rescaling the data
         data = pd.read_parquet('~/data/dataframe/dataframe.parquet')
-        data = rescale(data, mean_and_std_path='../../data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameters=True, inverse=True) 
+        data = rescale(data, mean_and_std_path='~/data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameters=True, inverse=True) 
         data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
 
         min_feh, max_feh = min(data['feh']), max(data['feh'])
@@ -76,20 +76,35 @@ def create_subfolders_and_run(base_dir):
         
         _ = gen_halo_Nsubhalos(data=data,
                        output_dir=os.path.join('./', 'N_subhalos_data' ),
-                       n_test=100,
-                       n_train=1000,)
+                       n_test=10,
+                       n_train=100,)
         
         # #train the posterior
         run_inference('./N_subhalos_training.yaml', './N_subhalos_data.yaml')
+        
+        with open('N_subhalos_NPE_summary.json', 'r') as f:
+            # Load the data from the file
+            summaries = json.load(f)
+            
+        fig, ax = plt.subplots(1, 1, figsize=(6,4))
+        c = list(mcolors.TABLEAU_COLORS)
+        for i, m in enumerate(summaries):
+            ax.plot(m['training_log_probs'], ls='-', label=f"{i}_train", c=c[i])
+            ax.plot(m['validation_log_probs'], ls='--', label=f"{i}_val", c=c[i])
+        ax.set_xlim(0)
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Log probability')
+        ax.legend()
+        fig.savefig('N_subhalos_training.png')
 
         #load the posterior from pkl file 
         posterior = load_posterior('./N_subhalos_NPE_posterior.pkl')
         
         fig = evaluate_posterior(posterior, observation_path=os.path.join('./', 'inference_x.npy'), parameter_path=os.path.join('./', 'inference_N_subhalos.npy'), labels=['N subhalos'], n_samples=10000)
-        fig[0].savefig('N_subhalos_evaluation.png')
+        fig.savefig('N_subhalos_evaluation.png')
         
         N_subhalos_samples = infer_observation(posterior, observation_path=os.path.join('./', 'inference_x.npy'), n_samples=10_000)
-        np.save(os.path.join('./', 'N_subhalos_samples.npy'), N_subhalos_samples)
+        np.save(os.path.join('./', 'N_subhalos_samples.npy'), N_subhalos_samples.cpu().numpy())
         
         fig = calibrarion(posterior=posterior, observation_test_path=os.path.join('./', 'N_subhalos_data/x_test.npy'), parameter_test_path=os.path.join('./', 'N_subhalos_data/N_subhalos_test.npy'), n_samples=10_000, labels=['N_subhalos'])    
         fig[0].savefig('Calibration_0.png')
@@ -99,10 +114,26 @@ def create_subfolders_and_run(base_dir):
         
         _ = gen_halo(data=data, output_dir=os.path.join('./','data' ), 
              training_yaml='./training.yaml', #needs to be changed accordingly to how many N_subhalos were inferred
-             n_test=1000, n_train=100_000, N_subhalos=round(N_subhalos_samples.mean().item()))
+             n_test=10, n_train=100, N_subhalos=round(N_subhalos_samples.mean().item()))
         
         #train the posterior
         run_inference('./training.yaml', './data.yaml')
+        
+        # Open the JSON file
+        with open('galaxy_NPE_summary.json', 'r') as f:
+            # Load the data from the file
+            summaries = json.load(f)
+            
+        fig, ax = plt.subplots(1, 1, figsize=(6,4))
+        c = list(mcolors.TABLEAU_COLORS)
+        for i, m in enumerate(summaries):
+            ax.plot(m['training_log_probs'], ls='-', label=f"{i}_train", c=c[i])
+            ax.plot(m['validation_log_probs'], ls='--', label=f"{i}_val", c=c[i])
+        ax.set_xlim(0)
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Log probability')
+        ax.legend()
+        fig.savefig('galaxy_training.png')
 
         #load the posterior from pkl file 
         posterior = load_posterior('./galaxy_NPE_posterior.pkl')
@@ -120,13 +151,13 @@ def create_subfolders_and_run(base_dir):
         labels = np.array([[f'm_{i}', f'dm_{i}', f'tau_{i}'] for i in range(round(N_subhalos_samples.mean().item()))] )
         labels = labels.T.reshape(-1)
 
-        np.save(os.path.join('./', 'inference_theta_Nsubahalosinfo.npy'), inference_parameters)
+        np.save(os.path.join('./', 'inference_theta_Nsubahalosinfo.npy'), inference_parameters.cpu().numpy())
 
         #evaluate posterior
         fig = evaluate_posterior(posterior, 
                                 observation_path=os.path.join('./', 'inference_x.npy'), parameter_path=os.path.join('./', 'inference_theta_Nsubahalosinfo.npy'),
                                 labels=labels, n_samples=10_000)
-        fig[0].savefig('./galaxy_evaluation.png')
+        fig.savefig('./galaxy_evaluation.png')
         
 
 if __name__ == "__main__":
