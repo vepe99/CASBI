@@ -69,7 +69,7 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
             "module": "ili.utils"
         },
         "train_args": {
-            "learning_rate": 0.0005,
+            "learning_rate":  0.00001,
             "stop_after_epochs": 20,
             "training_batch_size": 1024,
             "validation_fraction": 0.2
