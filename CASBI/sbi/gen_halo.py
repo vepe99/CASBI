@@ -31,7 +31,7 @@ from ili.validation import ValidationRunner
 
 from CASBI.utils.create_dataframe import rescale
 
-def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, max_feh, min_ofe, max_ofe, random_state:int):
+def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, max_feh, min_ofe, max_ofe, ):
     """
     Function to genereate one halo for a given number of subhalos. If train=True, the function will check if each of the sets of subhalos is already present in the test set, and if so, it will generate a new set of subhalos.
     Args:
@@ -53,9 +53,9 @@ def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, m
     
     """
     if train==False:
-        galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state))
+        galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=int(time.time())))
     else:
-        galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=random_state))
+        galaxies = set(data['Galaxy_name'].drop_duplicates().sample(N_subhalos, random_state=int(time.time())))
     if train: #if training check wheter or not those galaxy are present in the galaxy test set 
         while (any(set(galaxies) == galaxy_in_testset for galaxy_in_testset in galaxies_test)):
             print('matched galaxies, try again')
@@ -104,7 +104,7 @@ def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:in
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, n_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe, int(time.time())) for e, n_subhalos in enumerate(arr)]) #n_subhalos is passed also as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo, [(data, n_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe, ) for e, n_subhalos in enumerate(arr)]) #n_subhalos is passed also as random state to generate the subhalos
         
     # Unpack the results
     N_subhalos_test, parameters_test, x_test, galaxies_test = zip(*results)
@@ -121,7 +121,7 @@ def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:in
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, n_subhalos, 1, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, int(time.time())) for e, n_subhalos in enumerate(arr)]) #n_subhalos is passed also as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo, [(data, n_subhalos, 1, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, ) for e, n_subhalos in enumerate(arr)]) #n_subhalos is passed also as random state to generate the subhalos
 
     # Unpack the results
     N_subhalos, parameters, x, galaxies_training = zip(*results)
@@ -130,12 +130,14 @@ def gen_halo_Nsubhalos(data:pd.DataFrame, output_dir:str, n_test:int, n_train:in
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0')
     np.save(os.path.join(output_dir,'x_test.npy'), x_test[1:])
     np.save(os.path.join(output_dir,'N_subhalos_test.npy'), N_subhalos_test[1:])
+    np.save(os.path.join(output_dir, 'galaxy_test.npy'), galaxies_test[1:])
     np.save(os.path.join(output_dir,'x_0.npy'), x_0)
     np.save(os.path.join(output_dir,'N_subhalos_0.npy'), N_subhalos_0)
     np.save(os.path.join(output_dir,'parameters_0.npy'), parameters_test[0])
     np.save(os.path.join(output_dir,'galaxy_0.npy'), galaxies_0)
     np.save(os.path.join(output_dir,'x.npy'), x)
     np.save(os.path.join(output_dir,'N_subhalos.npy'), N_subhalos)
+    np.save(os.path.join(output_dir, 'galaxy_training.npy'), galaxies_training)
     print('finish prepare the data')
     
     return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
@@ -198,7 +200,7 @@ def gen_halo(data:pd.DataFrame, output_dir:str, training_yaml:str, n_test:int, n
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe,  int(time.time())) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 0, None, min_feh, max_feh, min_ofe, max_ofe,  ) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
         
     # Unpack the results
     N_subhalos_test, theta_test, x_test, galaxies_test = zip(*results)
@@ -213,17 +215,19 @@ def gen_halo(data:pd.DataFrame, output_dir:str, training_yaml:str, n_test:int, n
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 1, galaxies_test, min_feh, max_feh, min_ofe, max_ofe, i) for i in range(n_train)]) #the index i is passed as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo, [(data, N_subhalos, 1, galaxies_test, min_feh, max_feh, min_ofe, max_ofe) for i in range(n_train)]) #the index i is passed as random state to generate the subhalos
     # Unpack the results
     N_subhalos, theta, x, galaxies = zip(*results)
     
     #save in .npy files, we remove the first element of the test set since it will be stored as x_0 and theta_0
     np.save(os.path.join(output_dir,'./x_test.npy'), x_test[1:])
     np.save(os.path.join(output_dir, './theta_test.npy'), theta_test[1:])
+    np.save(os.path.join(output_dir, './galaxy_test.npy'), galaxies_test[1:])
     np.save(os.path.join(output_dir,'./x_0.npy'), x_0)
     np.save(os.path.join(output_dir,'./theta_0.npy'), theta_0)
     np.save(os.path.join(output_dir,'./x.npy'), x)
     np.save(os.path.join(output_dir,'./theta.npy'), theta)
+    np.save(os.path.join(output_dir, './galaxy_training.npy'), galaxies)
     print('finish prepare the data')
     return N_subhalos_test, theta_test, x_test, galaxies_test, N_subhalos, theta, x, galaxies
     
