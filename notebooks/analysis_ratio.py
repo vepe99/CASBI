@@ -25,8 +25,8 @@ def create_subfolders_and_run(base_dir):
     function_to_run (function): The function to run within each subfolder.
     *args: Additional arguments to pass to the function_to_run.
     """
-    for i in [3, 5, 10, 15, 25, 30]:
-        subfolder_path = os.path.join(base_dir, f'N_subhalos_{i}')
+    for i in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        subfolder_path = os.path.join(base_dir, f'mass_ratio_{i}')
         os.makedirs(subfolder_path, exist_ok=True)
         
         # Change working directory to the subfolder
@@ -50,15 +50,19 @@ def create_subfolders_and_run(base_dir):
         generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE')
         
         # loading and rescaling the data
-        data = pd.read_parquet('~/data/dataframe/dataframe.parquet')
+        data = pd.read_parquet('~/data/dataframe/dataframe_2.parquet')
         data = rescale(data, mean_and_std_path='~/data/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameters=True, inverse=True) 
         data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
 
         min_feh, max_feh = min(data['feh']), max(data['feh'])
         min_ofe, max_ofe = min(data['ofe']), max(data['ofe'])
         #unseen galaxies to do infernce on when the whole pipeline is ready
-        inference_N_subhalos = i
-        inference_galaxy = data['Galaxy_name'].drop_duplicates().sample(inference_N_subhalos)
+        
+        first_galaxy = data[data['star_log10mass'] > 8.5]['Galaxy_name'].drop_duplicates().sample(1)
+        first_galaxy_mass = data[data['Galaxy_name'].isin(first_galaxy)]['star_log10mass'].values[0]
+        print(first_galaxy_mass)
+        second_galaxy = data[(data['star_log10mass']>= first_galaxy_mass*(i))&(data['star_log10mass']<first_galaxy_mass*(i+1))]['Galaxy_name'].drop_duplicates().sample(1)
+        inference_galaxy = pd.concat([first_galaxy, second_galaxy])
         inference_parameters =  data[data['Galaxy_name'].isin(inference_galaxy)].drop(['feh', 'ofe', 'Galaxy_name'], axis=1).drop_duplicates().values.T
         sorted_index = np.argsort(inference_parameters[0], )[::-1] #orders the parameters in descending order of star mass
         inference_parameters = (inference_parameters[:,sorted_index]).reshape(-1)
@@ -66,7 +70,7 @@ def create_subfolders_and_run(base_dir):
         histogram_galaxy, _, _ = np.histogram2d(inferernce_galaxy_data[:, 0], inferernce_galaxy_data[:, 1], bins=64, range=[[min_feh, max_feh], [min_ofe, max_ofe]])
         infererence_sim_data =  np.expand_dims(np.log10(histogram_galaxy + 1e-6 +1), axis=0)
 
-        np.save(os.path.join('./', 'inference_N_subhalos.npy'), np.array(inference_N_subhalos).reshape(1, 1))
+        np.save(os.path.join('./', 'inference_N_subhalos.npy'), np.array(np.array([2])).reshape(1, 1))
         np.save(os.path.join('./', 'inference_theta.npy'), inference_parameters)
         np.save(os.path.join('./', 'inference_x.npy'), infererence_sim_data)
         np.save(os.path.join('./', 'inference_galaxy.npy'), inference_galaxy.values)
@@ -149,6 +153,7 @@ def create_subfolders_and_run(base_dir):
             inference_parameters = np.hstack((inference_parameters, np.zeros((3, round(N_subhalos_samples.mean().item()) - inference_N_subhalos.item())))).reshape(-1)
 
         labels = np.array([[rf'$\log_{{10}}(M_{{s, {i}}})\ [M_\odot]$', rf'$\log_{{10}}(M_{{DM, {i}}})\ [M_\odot]$', rf'$\tau_{i}\ [Gyr]$'] for i in range(round(N_subhalos_samples.mean().item()))] )
+
         labels = labels.T.reshape(-1)
 
         np.save(os.path.join('./', 'inference_theta_Nsubahalosinfo.npy'), inference_parameters)
@@ -161,4 +166,4 @@ def create_subfolders_and_run(base_dir):
         
 
 if __name__ == "__main__":
-    create_subfolders_and_run("/export/data/vgiusepp/analysis")
+    create_subfolders_and_run("/export/data/vgiusepp/analysis_ratio")
