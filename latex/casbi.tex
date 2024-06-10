@@ -1,12 +1,13 @@
 \chapter{CASBI}
 
 \section{SBI}
-SBI introduction on the tecnique and the various neural estimators. 
+CASBI is a Simulation Based Inference (SBI) pipeline to recover the properties of building blocks of Milky Way like galaxy's halo from observations of the chemical abundance plane. The SBI framework has existed along side the more traditional likelihood based inference methods for quite some years already, and has its root in the Approximate Bayes Computation (Rubin 1984), and has been used in a variety of fields, from cosmology to particle physics. The main difference between SBI and likelihood based methods, like MCMC, is that the former do not require the likelihood function to be known, but rather rely on a simulator to generate synthetic data \textbf{$\mathbf{x}$} once the input parameters $\boldsymbol{\theta}$ are passed to it, and the inference pipeline is trained based on data-parameters pairs ($\mathbf{x}, \boldsymbol{\theta}$). Recent advance of this technique was made possible by the use of machine learning models to emulate the conditional probability distributions, a technique know as Neural Density Estimation (NDE) (Papamakarios 2019). 
 
-\section{Generator for Sequential Neural estimator}
-\subsection{cNF}
-\subsection{FFF}
-\subsection{Diffusion model}
-\subsection{GRUMPY}
+Many excellent framework for handling SBI analysis are already available, and CASBI is build on top of the \textbf{Ltu-ILI} python package \cite{hoLtUILIAllinOneFramework2024}. In particular, CASBI analysis were performed relying on the \textbf{sbi} backend \cite{tejero-canteroSbiToolkitSimulationbased2020} to train a \textit{Neural Posterior Estimate} of the parameters' posterior. 
+
+
+\section{Preprocessing}
+
+\section{Two step Inference}
 
 \section{Python package}
