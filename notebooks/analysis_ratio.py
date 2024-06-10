@@ -25,7 +25,8 @@ def create_subfolders_and_run(base_dir):
     function_to_run (function): The function to run within each subfolder.
     *args: Additional arguments to pass to the function_to_run.
     """
-    for i in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    # for i in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+    for i in [0.4,0.6, 0.9]:
         subfolder_path = os.path.join(base_dir, f'mass_ratio_{i}')
         os.makedirs(subfolder_path, exist_ok=True)
         

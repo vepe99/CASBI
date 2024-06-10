@@ -51,7 +51,7 @@ def create_subfolders_and_run(base_dir):
         
         # loading and rescaling the data
         data = pd.read_parquet('/export/data/vgiusepp/data/full_dataframe/dataframe/dataframe.parquet')
-        data = rescale(data, mean_and_std_path='/export/data/vgiusepp/data/full_dataframe/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameters=True, inverse=True) 
+        # data = rescale(data, mean_and_std_path='/export/data/vgiusepp/data/full_dataframe/preprocess/mean_and_std.parquet', scale_observations=True, scale_parameters=True, inverse=True) 
         data =  data.drop(['gas_log10mass', 'a','redshift', 'mean_metallicity', 'std_metallicity','mean_FeMassFrac', 'std_FeMassFrac', 'mean_OMassFrac', 'std_OMassFrac'], axis=1)
 
         min_feh, max_feh = min(data['feh']), max(data['feh'])

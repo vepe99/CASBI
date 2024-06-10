@@ -25,7 +25,8 @@ def create_subfolders_and_run(base_dir):
     function_to_run (function): The function to run within each subfolder.
     *args: Additional arguments to pass to the function_to_run.
     """
-    for i in [3, 5, 10, 15, 25, 30]:
+    # for i in [3, 5, 10, 15, 25, 30]:
+    for i in [15, 25, 30]:
         subfolder_path = os.path.join(base_dir, f'N_subhalos_{i}')
         os.makedirs(subfolder_path, exist_ok=True)
         
