@@ -148,7 +148,6 @@ events.out.tfevents.*
 
 #latex stuff
 *.toc
-*.pdf
 *.aux
 *.log
 *.swp
