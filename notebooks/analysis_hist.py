@@ -27,7 +27,7 @@ def create_subfolders_and_run(base_dir):
     *args: Additional arguments to pass to the function_to_run.
     """
     # for i in [3, 5, 10, 15, 25, 30]:
-    for i in [15, 25, 30]:
+    for i in [2]:
         subfolder_path = os.path.join(base_dir, f'N_subhalos_{i}')
         os.makedirs(subfolder_path, exist_ok=True)
         
@@ -52,16 +52,16 @@ def create_subfolders_and_run(base_dir):
         generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE')
         
         # loading and rescaling the data
-        data = pd.read_parquet('~/data/dataframe/dataframe.parquet')
-        data_dir = '~/data/hist_data/'
+        data_dir = '../../data/full_dataframe/histogram_data/'
         
         #unseen galaxies to do infernce on when the whole pipeline is ready
         inference_N_subhalos = i
         inference_galaxy = set(random.sample(os.listdir(data_dir), inference_N_subhalos))
-        inference_parameters =  np.array([np.load(g)['star_log10mass', 'dm_log10mass', 'infall_time'] for g in inference_galaxy ]).T
+        inference_parameters =  np.array([[np.load(os.path.join(data_dir, g))['star_log10mass'], np.load(os.path.join(data_dir, g))['dm_log10mass'], np.load(os.path.join(data_dir, g))['infall_time']]  for g in inference_galaxy ]).T
         sorted_index = np.argsort(inference_parameters[0], )[::-1] #orders the parameters in descending order of star mass
         inference_parameters = (inference_parameters[:,sorted_index]).reshape(-1)
-        infererence_sim_data =  np.sum(np.array([np.load(g)['observables'] for g in galaxies ]))
+        infererence_sim_data =  np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]
+
 
         np.save(os.path.join('./', 'inference_N_subhalos.npy'), np.array(inference_N_subhalos).reshape(1, 1))
         np.save(os.path.join('./', 'inference_theta.npy'), inference_parameters)
@@ -69,10 +69,11 @@ def create_subfolders_and_run(base_dir):
         np.save(os.path.join('./', 'inference_galaxy.npy'), inference_galaxy)
         
         #remove the galaxies
-        data = data[~data['Galaxy_name'].isin(np.load(os.path.join('./', 'inference_galaxy.npy'), allow_pickle=True))]
+        # data = data[~data['Galaxy_name'].isin(np.load(os.path.join('./', 'inference_galaxy.npy'), allow_pickle=True))]
         
-        _ = gen_halo_Nsubhalos_hist(data=data,
+        _ = gen_halo_Nsubhalos_hist(data_dir=data_dir,
                        output_dir=os.path.join('./', 'N_subhalos_data' ),
+                       inference_galaxy=inference_galaxy,
                        n_test=100,
                        n_train=1000,)
         
@@ -109,13 +110,14 @@ def create_subfolders_and_run(base_dir):
         fig[2].savefig('Calibration_2.png')
         fig[3].savefig('Calibration_3.png')
         
-        full_dataset = pd.read_parquet('~/data/full_dataframe/dataframe.parquet')
+        full_dataset = pd.read_parquet('~/../../data/vgiusepp/data/full_dataframe/dataframe/dataframe.parquet')
         prior_limits = pd.DataFrame({'star_log10mass': [full_dataset['star_log10mass'].min(), full_dataset['star_log10mass'].max()],
                                      'dm_log10mass': [full_dataset['dm_log10mass'].min(), full_dataset['dm_log10mass'].max()],
                                      'infall_time': [full_dataset['infall_time'].min(), full_dataset['infall_time'].max()]})
         
         _ = gen_halo_hist(data=data, output_dir=os.path.join('./','data' ), 
              training_yaml='./training.yaml', #needs to be changed accordingly to how many N_subhalos were inferred
+             inference_galaxy=inference_galaxy,
              n_test=1000, n_train=100_000, N_subhalos=round(N_subhalos_samples.mean().item()), prior_limits=prior_limits)
         
         #train the posterior

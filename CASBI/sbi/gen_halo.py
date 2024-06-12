@@ -237,25 +237,26 @@ histogram data
 """
 import random
 
-def gen_onehalo_hist(data_dir, N_subhalos, train:bool, galaxies_test:np.array ):
+def gen_onehalo_hist(data_dir, N_subhalos, train:bool, galaxies_test:np.array, inference_galaxy:list ):
     """
     """
     random.seed(int(time.time()))
-    galaxies = set(random.sample(os.listdir(data_dir), N_subhalos))
+    galaxies_removed_inference = [g for g in os.listdir(data_dir) if g not in inference_galaxy] #remove the galaxy used for inference
+    galaxies = set(random.sample(galaxies_removed_inference, N_subhalos))
     if train: #if training check wheter or not those galaxy are present in the galaxy test set 
         while (any(set(galaxies) == galaxy_in_testset for galaxy_in_testset in galaxies_test)):
             print('matched galaxies, try again')
             print('galaxies', set(galaxies))
             print('test galaxies', galaxies_test)
             galaxies = set(random.sample(os.listdir(data_dir), N_subhalos))
-    parameters =  np.array([np.load(g)['star_log10mass', 'dm_log10mass', 'infall_time'] for g in galaxies ]).T
+    parameters =  np.array([[np.load(os.path.join(data_dir, g))['star_log10mass'], np.load(os.path.join(data_dir, g))['dm_log10mass'], np.load(os.path.join(data_dir, g))['infall_time']]  for g in galaxies ]).T
     sorted_index = np.argsort(parameters[0], )[::-1] #orders the parameters in descending order of star mass
     parameters = (parameters[:,sorted_index]).reshape(-1)
-    sim_data =  np.sum(np.array([np.load(g)['observables'] for g in galaxies ]))
+    sim_data =  np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in galaxies]), axis=0)[np.newaxis, :]
     return N_subhalos, parameters, sim_data, galaxies
 
 
-def gen_halo_Nsubhalos_hist(data_dir:pd.DataFrame, output_dir:str, n_test:int, n_train:int, max_subhalos:int=100, ):
+def gen_halo_Nsubhalos_hist(data_dir:pd.DataFrame, output_dir:str, n_test:int, n_train:int, inference_galaxy:str, max_subhalos:int=100, ):
     """
     """
     
@@ -264,7 +265,7 @@ def gen_halo_Nsubhalos_hist(data_dir:pd.DataFrame, output_dir:str, n_test:int, n
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo_hist, [(data_dir, n_subhalos, 0, None) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo_hist, [(data_dir, n_subhalos, 0, None, inference_galaxy) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
         
     # Unpack the results
     N_subhalos_test, parameters_test, x_test, galaxies_test = zip(*results)
@@ -281,7 +282,7 @@ def gen_halo_Nsubhalos_hist(data_dir:pd.DataFrame, output_dir:str, n_test:int, n
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data_dir, n_subhalos, 1, galaxies_test) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo_hist, [(data_dir, n_subhalos, 1, galaxies_test, inference_galaxy) for n_subhalos in arr]) #n_subhalos is passed also as random state to generate the subhalos
 
     # Unpack the results
     N_subhalos, parameters, x, galaxies_training = zip(*results)
@@ -302,7 +303,7 @@ def gen_halo_Nsubhalos_hist(data_dir:pd.DataFrame, output_dir:str, n_test:int, n
     
     return N_subhalos_test, parameters_test, x_test, galaxies_test, N_subhalos_0, x_0, N_subhalos, parameters, x, galaxies_training
 
-def gen_halo_hist(data_dir:pd.DataFrame, output_dir:str, training_yaml:str, n_test:int, n_train:int, N_subhalos:int, prior_limits):
+def gen_halo_hist(data_dir:pd.DataFrame, output_dir:str, training_yaml:str, n_test:int, n_train:int, N_subhalos:int, inference_galaxy,  prior_limits):
     """
     """
     print('running gen halo')
@@ -334,7 +335,7 @@ def gen_halo_hist(data_dir:pd.DataFrame, output_dir:str, training_yaml:str, n_te
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data_dir, N_subhalos, 0, None ) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo_hist, [(data_dir, N_subhalos, 0, None, inference_galaxy ) for i in range(n_test)]) #the index i is passed as random state to generate the subhalos
         
     # Unpack the results
     N_subhalos_test, theta_test, x_test, galaxies_test = zip(*results)
@@ -347,7 +348,7 @@ def gen_halo_hist(data_dir:pd.DataFrame, output_dir:str, training_yaml:str, n_te
     # Create a pool of workers
     with Pool() as pool:
         # Map the function to the data
-        results = pool.starmap(gen_onehalo, [(data_dir, N_subhalos, 1, galaxies_test, ) for i in range(n_train)]) #the index i is passed as random state to generate the subhalos
+        results = pool.starmap(gen_onehalo_hist, [(data_dir, N_subhalos, 1, galaxies_test, inference_galaxy) for i in range(n_train)]) #the index i is passed as random state to generate the subhalos
     # Unpack the results
     N_subhalos, theta, x, galaxies = zip(*results)
     

@@ -1,5 +1,6 @@
 #generate trainig and data yaml file
 import yaml
+import CASBI
 
 def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:str='theta.npy', xobs_file:str='x_0.npy', thetafid_file:str='theta_0.npy'):
     """
@@ -38,7 +39,7 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
                 "output_dim": 128
             },
             "class": "ConvNet",
-            "module": "CNN"
+            "module": "CASBI.sbi.CNN"
         },
         "model": {
             "backend": "sbi",
