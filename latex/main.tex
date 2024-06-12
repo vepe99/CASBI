@@ -11,6 +11,23 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{makeidx} % Add the makeidx package
+
+
+\usepackage[style=authoryear, maxnames=1, minnames=1, uniquelist=false]{biblatex}
+\addbibresource{./MasterThesis.bib}  % Replace with the path to your .bib file
+\AtEveryCitekey{\clearname{editor}}  % Clear editor names if present
+\renewcommand*{\labelnamepunct}{\addcolon\space}  % Formatting adjustment
+\usepackage{hyperref}
+% Ensure hyperref works well with biblatex
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+
 \title{CASBI: Chemical Abbundance Simulation Based Inference}
 \author{Giuseppe Viterbo}
 
@@ -28,8 +45,9 @@
 
 
 
-\bibliographystyle{abbrv}
-\bibliography{./MasterThesis.bib}
-\printindex % Add this command to print the index
+% \bibliographystyle{abbrv}
+% \bibliography{./MasterThesis.bib}
+\printbibliography
 
+\printindex % Add this command to print the index
 \end{document}

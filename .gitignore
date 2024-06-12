@@ -156,3 +156,5 @@ events.out.tfevents.*
 *.fls
 *.bbl
 *.blg
+latex/main.bcf
+latex/main.out
