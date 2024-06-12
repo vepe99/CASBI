@@ -3,21 +3,30 @@
 \section{SBI}
 CASBI is a Simulation Based Inference (SBI) package to recover the properties of building blocks of Milky Way like galaxy's halo from observations of the chemical abundance plane. The SBI framework has existed along side the more traditional likelihood based inference methods for quite some years already, and has its root in the Approximate Bayes Computation \cite{rubinBayesianlyJustifiableRelevant1984}, and it has been used in a variety of fields, from cosmology to particle physics. The main difference between SBI and likelihood based methods, like MCMC, is that the former do not require the likelihood function to be known, but rather rely on a simulator to generate synthetic data \textbf{$\mathbf{x}$} once the input parameters $\boldsymbol{\theta}$ are passed to it, and the inference pipeline is trained based on data-parameters pairs ($\mathbf{x}, \boldsymbol{\theta}$). 
 
-Recent advance of this technique was made possible by the use of machine learning models to emulate conditional probability distributions, a technique know as Neural Density Estimation (NDE) \cite{papamakariosNeuralDensityEstimation2019}. The NDE is achieved by training a Normalizing Flow architecture, a generative model that allows to obtain samples from a complex distribution $p(x)$ by constructing a series of \textbf{bijiective} transformations  $f_{\phi_i}^i$ that map $x$ to a latent space $z$ that is distributed as a simple distribution, like a Gaussian. Accordingly to \cite{kingmaGlowGenerativeFlow2018}, in the end the models learns the following schema parameters $\phi_i$:
+Recent advance of this technique was made possible by the use of machine learning models to emulate conditional probability distributions, a technique know as Neural Density Estimation (NDE) \cite{papamakariosNeuralDensityEstimation2019}. The NDE is achieved by training a Normalizing Flow architecture, a generative model that allows to obtain samples from a complex distribution $p(x)$ by constructing a series of \textbf{bijiective} transformations  $f_{\phi_i}^i$ that map $x$ to a latent space $z$ that is distributed as a simple distribution, like a Gaussian. Accordingly to \cite{kingmaGlowGenerativeFlow2018}, implementing the transformations as Neural Network with parameters $\phi_i$, in the end the models learns the following schema:
 \begin{equation}
-p(x) \sim x \xleftrightarrow{\text{$f_{\phi_1}^1$}} h_1 \xleftrightarrow{\text{$f_{\phi_2}^2$}} h_2 \dots \xleftrightarrow{\text{$f_{\phi_K}^K$}} z \sim \mathcal{N}(z; 0, \mathcal{I}),
+p(x) \sim x \equiv h_0 \xleftrightarrow{\text{$f_{\phi_1}^1$}} h_1 \xleftrightarrow{\text{$f_{\phi_2}^2$}} h_2 \dots \xleftrightarrow{\text{$f_{\phi_K}^K$}} h_K \equiv z \sim \mathcal{N}(z; 0, \mathcal{I}),
 \end{equation}
 by maximizing the negative log likelihood as loss function and using the change of variable formula as follows:
 \begin{equation}
 \begin{aligned}
     \text{log} \, p(x) &= \text{log} \, p(z) + \text{log} \left| \text{det} \left( \frac{\partial z}{\partial x} \right) \right| \\
-    &= \text{log} \, p(z) + \sum_{i=1}^K \text{log} \left| \text{det} \left( \frac{\partial h_{i}}{\partial h_{i-1}} \right) \right| ,
+    &= \text{log} \, p(z) + \sum_{i=1}^K \text{log} \left| \text{det} \left( \frac{\partial h_{i}}{\partial h_{i-1}} \right) \right| \\
+    &= \text{log} \, p(z) + \sum_{i=1}^K \text{log} \left| \text{det} \left( \frac{\partial f_{\phi_i}^i(h_{i-1})}{\partial h_{i-1}} \right) \right|,
 \end{aligned}
 \end{equation}
-where the last term is sum of the log determinant of the Jacobian of the transformations $f_{\phi_i}^i$. Once the model is trained it is easy to sample from the distribution $p(x)$ by sampling from the latent space $z$ and applying the inverse transformations $(f_{\phi_1}^1)^{-1} \circ \dots \circ (f_{\phi_K}^K)^{-1}$.
+where the last term is the sum of the log determinant of the Jacobian of the transformations $f_{\phi_i}^i$. Once the model is trained it is easy to sample from the distribution $p(x)$ by sampling from the latent space $z$ and applying the inverse transformations $(f_{\phi_1}^1)^{-1} \circ \dots \circ (f_{\phi_K}^K)^{-1}$.
 In order to keep the sum of log determinant tractable, the use of \textit{Coupling layers} allows to split the input $x$ along its dimensions and apply a transformation only to a subset of the dimensions, using the other as input for the transformation and keeping it fixed. The subset is than changed at each layers, allowing to have a permutation invariant transformation. The transformations $f^{i}_{\phi_i}$ are usually very simple invertible transformation like a translation and a scaling, or splines functions. 
 
-Following the discussion presented in \cite{hoLtUILIAllinOneFramework2024}, in Bayesian analysis we have the choice to approximate either the Posterior, the Likelihood or the Likelihood ratio, and this choice depend mostly on the problem that one wants to solve. In our case, due to the complexity of the Likelihood distribution of the chemical abundance space, we choose to approximate the Posterior distributions, and so we adopted the Neural Posterior Estimate that can be trained using the negative loglikelihood as loss function:
+Following the discussion presented in \cite{hoLtUILIAllinOneFramework2024}, in Bayesian analysis we have the choice to approximate either the Posterior, the Likelihood or the Likelihood ratio, and this choice depend mostly on the problem that one wants to solve. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{./figure/sbi_methods.jpg}
+    \caption{Different approaches to Simulation Based Inference, from \cite{FrontierSimulationbasedInference}.}
+    \label{fig:sbi_approaches}
+\end{figure}
+
+In our case, due to the complexity of the Likelihood distribution of the chemical abundance space, we choose to approximate the Posterior distributions, and so we adopted the Neural Posterior Estimate (method \textbf{F} in Figure~\ref{fig:sbi_approaches}) that can be trained using the negative loglikelihood as loss function:
 \begin{equation}
 \begin{aligned}
     \mathcal{L}_{NPE}(\boldsymbol{\theta}) &= - \mathbb{E}_{\mathcal{D}_{train}} \text{log} \hat{\mathcal{P}}(\theta_i | x_i) \\ 

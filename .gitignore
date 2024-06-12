@@ -158,3 +158,4 @@ events.out.tfevents.*
 *.blg
 latex/main.bcf
 latex/main.out
+latex/figure/sbi_methods.jpg:Zone.Identifier
