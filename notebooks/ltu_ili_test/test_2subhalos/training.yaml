@@ -1,0 +1,52 @@
+device: cuda
+embedding_net:
+  args:
+    input_channel: 1
+    output_dim: 64
+  class: ConvNet
+  module: CNN
+model:
+  backend: sbi
+  engine: NPE
+  name: toy_NPE
+  nets:
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
+    signature: m1
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
+    signature: m2
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
+    signature: m3
+  - hidden_features: 70
+    model: nsf
+    num_transforms: 15
+    signature: m4
+out_dir: ./
+prior:
+  args:
+    high:
+    - 9.28852311340495
+    - 9.28852311340495
+    - 14.45497923316999
+    - 14.45497923316999
+    - 14.152306184479944
+    - 14.152306184479944
+    low:
+    - 4.842449480387966
+    - 4.842449480387966
+    - 8.358227496708977
+    - 8.358227496708977
+    - 1.1525002894180059
+    - 1.1525002894180059
+  class: Uniform
+  module: ili.utils
+train_args:
+  learning_rate: 0.0001
+  stop_after_epochs: 20
+  training_batch_size: 256
+  validation_fraction: 0.2

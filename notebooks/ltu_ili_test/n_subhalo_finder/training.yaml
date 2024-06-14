@@ -38,5 +38,5 @@ prior:
 train_args:
   learning_rate: 0.0001
   stop_after_epochs: 20
-  training_batch_size: 1024
+  training_batch_size: 2048
   validation_fraction: 0.2

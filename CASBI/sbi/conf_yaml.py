@@ -24,7 +24,7 @@ def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:
     with open(filepath, 'w') as file:
         yaml.dump(data_yaml, file)
         
-def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=100, num_transforms:int=10):
+def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=100, num_transforms:int=10, model:str='nsf', embedding_net:str='ConvNet', output_dim:int=128):
     """
     Create the training.yaml file to use as input for the training process. This function create a yaml file that should be customize by the user.
 
@@ -36,9 +36,9 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
         "embedding_net": {
             "args": {
                 "input_channel": 1,
-                "output_dim": 128
+                "output_dim": output_dim,
             },
-            "class": "ConvNet",
+            "class": f"{embedding_net}",
             "module": "CASBI.sbi.CNN"
         },
         "model": {
@@ -48,25 +48,25 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
             "nets": [
                 {
                     "hidden_features": hidden_feature,
-                    "model": "nsf",
+                    "model": f"{model}",
                     "num_transforms": num_transforms,
                     "signature": "m1"
                 },
                 {
                     "hidden_features": hidden_feature,
-                    "model": "nsf",
+                    "model": f"{model}",
                     "num_transforms": num_transforms,
                     "signature": "m2"
                 },
                 {
                     "hidden_features": hidden_feature,
-                    "model": "nsf",
+                    "model": f"{model}",
                     "num_transforms": num_transforms,
                     "signature": "m3"
                 },
                 {
                     "hidden_features": hidden_feature,
-                    "model": "nsf",
+                    "model": f"{model}",
                     "num_transforms": num_transforms,
                     "signature": "m4"
                 },
