@@ -24,7 +24,7 @@ def generate_data_yaml(filepath:str, in_dir:str, x_file:str='x.npy', theta_file:
     with open(filepath, 'w') as file:
         yaml.dump(data_yaml, file)
         
-def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=100, num_transforms:int=10, model:str='nsf', embedding_net:str='ConvNet', output_dim:int=128):
+def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=100, num_transforms:int=10, model:str='nsf', embedding_net:str='CNN', output_dim:int=128):
     """
     Create the training.yaml file to use as input for the training process. This function create a yaml file that should be customize by the user.
 
@@ -38,8 +38,8 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
                 "input_channel": 1,
                 "output_dim": output_dim,
             },
-            "class": f"{embedding_net}",
-            "module": "CASBI.sbi.CNN"
+            "class": "ConvNet",
+            "module": f"CASBI.sbi.{embedding_net}"
         },
         "model": {
             "backend": "sbi",
@@ -75,7 +75,7 @@ def generate_training_yaml(filepath:str, output_file:str , hidden_feature:int=10
         "out_dir": "./",
         "prior": {
             "args": {
-                "high": [100.0],
+                "high": [30.0],
                 "low": [2.0]
             },
             "class": "Uniform",

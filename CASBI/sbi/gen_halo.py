@@ -252,7 +252,7 @@ def gen_onehalo_hist(data_dir, N_subhalos, train:bool, galaxies_test:np.array, i
     parameters =  np.array([[np.load(os.path.join(data_dir, g))['star_log10mass'], np.load(os.path.join(data_dir, g))['dm_log10mass'], np.load(os.path.join(data_dir, g))['infall_time']]  for g in galaxies ]).T
     sorted_index = np.argsort(parameters[0], )[::-1] #orders the parameters in descending order of star mass
     parameters = (parameters[:,sorted_index]).reshape(-1)
-    sim_data =  np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in galaxies]), axis=0)[np.newaxis, :]
+    sim_data =  np.log10(np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in galaxies]), axis=0)[np.newaxis, :] + 1+1e-6)
     return N_subhalos, parameters, sim_data, galaxies
 
 

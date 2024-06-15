@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib as mpl
-mpl.style.use('./paper.mcstyle')
+mpl.style.use('../paper.mcstyle')
 
 import torch
 
@@ -26,7 +26,8 @@ def create_subfolders_and_run(base_dir):
     function_to_run (function): The function to run within each subfolder.
     *args: Additional arguments to pass to the function_to_run.
     """
-    for i in [2, 3, 5, 10, 20, 30]:
+    # for i in [2, 3, 5, 10, 20, 30]:
+    for i in [2]:
         subfolder_path = os.path.join(base_dir, f'N_subhalos_{i}')
         os.makedirs(subfolder_path, exist_ok=True)
         
@@ -43,12 +44,12 @@ def create_subfolders_and_run(base_dir):
                         in_dir='./N_subhalos_data', #where the data are stored
                         theta_file='N_subhalos.npy',
                         thetafid_file='N_subhalos_0.npy')
-        generate_training_yaml(filepath='./N_subhalos_training.yaml', output_file='./N_subhalos_NPE', hidden_feature=70, num_transforms=5, model='maf', embedding_net='ConvNet', output_dim=128)
+        generate_training_yaml(filepath='./N_subhalos_training.yaml', output_file='./N_subhalos_NPE', hidden_feature=70, num_transforms=20, model='nsf', embedding_net='CNN', output_dim=128)
 
 
         #Subhalos properties inference
         generate_data_yaml(filepath='./data.yaml', in_dir='./data',) #where the data are stored
-        generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE', hidden_feature=70, num_transforms=5, model='maf', embedding_net='ConvNet', output_dim=128)
+        generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE', hidden_feature=70, num_transforms=20, model='nsf', embedding_net='CNN', output_dim=128)
         
         # loading and rescaling the data
         data_dir = '../../data/full_dataframe/histogram_data/'
@@ -59,7 +60,7 @@ def create_subfolders_and_run(base_dir):
         inference_parameters =  np.array([[np.load(os.path.join(data_dir, g))['star_log10mass'], np.load(os.path.join(data_dir, g))['dm_log10mass'], np.load(os.path.join(data_dir, g))['infall_time']]  for g in inference_galaxy ]).T
         sorted_index = np.argsort(inference_parameters[0], )[::-1] #orders the parameters in descending order of star mass
         inference_parameters = (inference_parameters[:,sorted_index]).reshape(-1)
-        infererence_sim_data =  np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]
+        infererence_sim_data =  np.log10(np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]+1+1e-6)
 
 
         np.save(os.path.join('./', 'inference_N_subhalos.npy'), np.array(inference_N_subhalos).reshape(1, 1))
@@ -109,7 +110,7 @@ def create_subfolders_and_run(base_dir):
         fig[2].savefig('Calibration_2.png')
         fig[3].savefig('Calibration_3.png')
         
-        full_dataset = pd.read_parquet('~/../../data/vgiusepp/data/full_dataframe/dataframe/dataframe.parquet')
+        full_dataset = pd.read_parquet('/export/data/vgiusepp/data/full_dataframe/dataframe/dataframe.parquet')
         prior_limits = pd.DataFrame({'star_log10mass': [full_dataset['star_log10mass'].min(), full_dataset['star_log10mass'].max()],
                                      'dm_log10mass': [full_dataset['dm_log10mass'].min(), full_dataset['dm_log10mass'].max()],
                                      'infall_time': [full_dataset['infall_time'].min(), full_dataset['infall_time'].max()]})
