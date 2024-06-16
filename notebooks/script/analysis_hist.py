@@ -60,7 +60,8 @@ def create_subfolders_and_run(base_dir):
         inference_parameters =  np.array([[np.load(os.path.join(data_dir, g))['star_log10mass'], np.load(os.path.join(data_dir, g))['dm_log10mass'], np.load(os.path.join(data_dir, g))['infall_time']]  for g in inference_galaxy ]).T
         sorted_index = np.argsort(inference_parameters[0], )[::-1] #orders the parameters in descending order of star mass
         inference_parameters = (inference_parameters[:,sorted_index]).reshape(-1)
-        infererence_sim_data =  np.log10(np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]+1+1e-6)
+        # infererence_sim_data =  np.log10(np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]+1+1e-6)
+        infererence_sim_data =  np.sum(np.array([np.load(os.path.join(data_dir, g))['observables'] for g in inference_galaxy ]), axis=0)[np.newaxis, :]
 
 
         np.save(os.path.join('./', 'inference_N_subhalos.npy'), np.array(inference_N_subhalos).reshape(1, 1))
