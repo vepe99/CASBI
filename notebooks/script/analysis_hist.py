@@ -49,7 +49,7 @@ def create_subfolders_and_run(base_dir):
 
         #Subhalos properties inference
         generate_data_yaml(filepath='./data.yaml', in_dir='./data',) #where the data are stored
-        generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE', hidden_feature=70, num_transforms=20, model='nsf', embedding_net='CNN', output_dim=128)
+        generate_training_yaml(filepath='./training.yaml', output_file='./galaxy_NPE', hidden_feature=70, num_transforms=25, model='nsf', embedding_net='CNN', output_dim=128)
         
         # loading and rescaling the data
         data_dir = '../../data/full_dataframe/histogram_data/'
@@ -98,7 +98,7 @@ def create_subfolders_and_run(base_dir):
         #load the posterior from pkl file 
         posterior = load_posterior('./N_subhalos_NPE_posterior.pkl')
         
-        fig = evaluate_posterior(posterior, observation_path=os.path.join('./', 'inference_x.npy'), parameter_path=os.path.join('./', 'inference_N_subhalos.npy'), labels=['N subhalos'], n_samples=10000)
+        fig = evaluate_posterior(posterior, observation_path=os.path.join('./', 'inference_x.npy'), parameter_path=os.path.join('./', 'inference_N_subhalos.npy'), labels=['N subhalos'], n_samples=10_000)
         fig.savefig('N_subhalos_evaluation.png')
         
         N_subhalos_samples = infer_observation(posterior, observation_path=os.path.join('./', 'inference_x.npy'), n_samples=10_000)
@@ -115,10 +115,14 @@ def create_subfolders_and_run(base_dir):
                                      'dm_log10mass': [full_dataset['dm_log10mass'].min(), full_dataset['dm_log10mass'].max()],
                                      'infall_time': [full_dataset['infall_time'].min(), full_dataset['infall_time'].max()]})
         
+        # _ = gen_halo_hist(data_dir=data_dir, output_dir=os.path.join('./','data' ), 
+        #      training_yaml='./training.yaml', #needs to be changed accordingly to how many N_subhalos were inferred
+        #      inference_galaxy=inference_galaxy,
+        #      n_test=1000, n_train=100_000, N_subhalos=round(N_subhalos_samples.mean().item()), prior_limits=prior_limits)
         _ = gen_halo_hist(data_dir=data_dir, output_dir=os.path.join('./','data' ), 
              training_yaml='./training.yaml', #needs to be changed accordingly to how many N_subhalos were inferred
              inference_galaxy=inference_galaxy,
-             n_test=1000, n_train=100_000, N_subhalos=round(N_subhalos_samples.mean().item()), prior_limits=prior_limits)
+             n_test=1000, n_train=500_000, N_subhalos=2, prior_limits=prior_limits)
         
         #train the posterior
         run_inference('./training.yaml', './data.yaml')
@@ -144,15 +148,18 @@ def create_subfolders_and_run(base_dir):
         
         
         inference_N_subhalos=np.load(os.path.join('./', 'inference_N_subhalos.npy'))
-        inference_parameters = np.load(os.path.join('./', 'inference_theta.npy'))
-        if inference_N_subhalos > round(N_subhalos_samples.mean().item()):
-            inference_parameters = inference_parameters.reshape((3, inference_N_subhalos))
-            inference_parameters = inference_parameters[:, :round(N_subhalos_samples.mean().item())].reshape(-1)
-        else:
-            inference_parameters = inference_parameters.reshape((3, inference_N_subhalos.item()))
-            inference_parameters = np.hstack((inference_parameters, np.zeros((3, round(N_subhalos_samples.mean().item()) - inference_N_subhalos.item())))).reshape(-1)
+        # inference_parameters = np.load(os.path.join('./', 'inference_theta.npy'))
+        # if inference_N_subhalos > round(N_subhalos_samples.mean().item()):
+        #     inference_parameters = inference_parameters.reshape((3, inference_N_subhalos))
+        #     inference_parameters = inference_parameters[:, :round(N_subhalos_samples.mean().item())].reshape(-1)
+        # else:
+        #     inference_parameters = inference_parameters.reshape((3, inference_N_subhalos.item()))
+        #     inference_parameters = np.hstack((inference_parameters, np.zeros((3, round(N_subhalos_samples.mean().item()) - inference_N_subhalos.item())))).reshape(-1)
 
-        labels = np.array([[rf'$\log_{{10}}(M_{{s, {i}}})\ [M_\odot]$', rf'$\log_{{10}}(M_{{DM, {i}}})\ [M_\odot]$', rf'$\tau_{i}\ [Gyr]$'] for i in range(round(N_subhalos_samples.mean().item()))] )
+        # labels = np.array([[rf'$\log_{{10}}(M_{{s, {i}}})\ [M_\odot]$', rf'$\log_{{10}}(M_{{DM, {i}}})\ [M_\odot]$', rf'$\tau_{i}\ [Gyr]$'] for i in range(round(N_subhalos_samples.mean().item()))] )
+        # labels = labels.T.reshape(-1)
+        
+        labels = np.array([[rf'$\log_{{10}}(M_{{s, {i}}})\ [M_\odot]$', rf'$\log_{{10}}(M_{{DM, {i}}})\ [M_\odot]$', rf'$\tau_{i}\ [Gyr]$'] for i in range(2)] )
         labels = labels.T.reshape(-1)
 
         np.save(os.path.join('./', 'inference_theta_Nsubahalosinfo.npy'), inference_parameters)
