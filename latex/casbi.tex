@@ -52,6 +52,26 @@ The analysis with this two step inference did not satisfy the author, because th
 
 \section{Realistic halo and 1 step Inference}
 
-In order to avoid the need for a two step inference and still retaining the possibility to access to the information on how many subhalos populate a given abundance plane, we have decided to condition the sbi model to retrieve the $j$-most massive subhalo. In this way the NPE is trained on $(x, \theta) = ((x_{j \in J}, \, j), \theta_{j \in J})$ pairs, where $J$ represent the $J$-th original mock galaxy halo, and $j$ is the  $j$-most massive subhalo of the $J$ galaxy. In this way the $J$ galaxy abundance plane is shown as many times as the number of subhalos present in it, but the embedding is conditioned to the $j$ value by concatenating it to each input of the fully connected layer of the CNN used to embed the observations, and it is concatenate also before passing the embedded information to the normalizing flow component. 
+In order to avoid the need for a two step inference and still retaining the possibility to access to the information on how many subhalos populate a given abundance plane, we have decided to condition the sbi model to retrieve the $j$-most massive subhalo. In this way the NPE is trained on $(x, \theta) = ((x_{j \in J}, \, j), \theta_{j \in J})$ pairs, where $J$ represent the $J$-th original mock galaxy halo, and $j$ is the  $j$-most massive subhalo of the $J$ galaxy. In this way the $J$ galaxy abundance plane is shown as many times as the number of subhalos present in it, but the embedding is conditioned to the $j$ value by concatenating it to each input of the fully connected layer of the CNN used to embed the observations, and it is concatenate also before passing the embedded information to the normalizing flow. 
 
+In order to be more realistic in the creation of a mock galaxy halo we have decided to adopt a sampling scheme for the subhalos that is based on the luminosity function described in \cite{koposovLuminosityFunctionMilky2008}. The luminosity function described the subhalo distribution in a range of luminosities that spans from $M_V = -2$ all the way to the luminosity of the Large Magellanic cloud:
+\begin{equation}
+    \frac{dN}{d M_V} = 10 \times 10^{0.1(M_V + 5)} 
+\end{equation}
+we can then manipulate this expression to the describe it as a function of the Luminosity in solar luminosity $L$:
+\begin{equation}
+\begin{split}
+    \frac{dN}{dL} &= \frac{dN}{d M_V} \times \frac{dM_V}{dL} \\
+    &= 10 \times 10^{0.1(M_V + 5)} \times 0.4 \times 10^{0.4(M_V - M_{V, \odot})} \\
+\end{split}
+\end{equation}
+
+which in the end can be integrated to obtain the cumulative distribution function $N(L)$ that we are going to use:
+\begin{equation}
+    N(<L) = K \times L^{\alpha},
+\label{eq:CumLuminosity}
+\end{equation}
+where K represent a constant and $\alpha=-1.25$ is the single power law exponent obtained by \cite{koposovLuminosityFunctionMilky2008}. Other work based not only on SDSS observations like \cite{koposovLuminosityFunctionMilky2008} but also on $\Lambda$CDM $N$-body simulation set $\alpha = -1.9 \pm 0.2$ (\cite{tollerudHundredsMilkyWay2008}). We fix this value to -1.25 and we leave the analysis of the impact of this choice as a future work.
+After obtaining the relation \ref{eq:CumLuminosity} and assuming $L_\odot = M_\odot$, we normalize this relation after setting the support to be the interval of masses that we have available in our catalogue of NIHAO simulations ($10^5 M_\odot < M < 6 \cdot 10^9 M_\odot$) and we sample from this distributions using an inverse scheme. After obtaining the analytic samples we take the first and second Nearest Neighbors that are within a  
+10\% of the analytic sampled mass as subhalo for our catalogue. During this iterative procedure we make sure to sample non repeated subhalo within the same mock halo and we avoid repetitions of the same combinations of subhalos between mock subhalos both within training and test set and across these two sets.   
 \section{Surrogate Simulator}
