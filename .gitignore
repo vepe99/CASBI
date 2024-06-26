@@ -159,3 +159,6 @@ events.out.tfevents.*
 latex/main.bcf
 latex/main.out
 latex/figure/sbi_methods.jpg:Zone.Identifier
+
+#Windows stuff
+*Zone.Identifier
