@@ -1,0 +1,298 @@
+% A chain of bijections $f = f_1 \circ \dots \circ f_k$ constituting a normalizing flow which step by step transforms a simple distribution $p_0(\vec z_0)$ into a complex one $p_k(\vec z_k)$. The bijections are trained to fit $p_k(\vec z_k)$ to some target distribution $p_x(\vec x)$.
+% Inspired by Lilian Weng: https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models
+
+\documentclass[tikz]{standalone}
+
+\usepackage{contour}
+\usepackage{pgfplots}
+\usepackage{amsmath} % Add this line to include the amsmath package
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+%\pgfplotsset{compat=1.13}
+%\usepgfplotslibrary{external}
+%\tikzexternalize[prefix=figures/] % Specify the directory where temporary files will be stored
+
+\pgfplotsset{
+colormap={whitered}{color(0cm)=(white); color(1cm)=(orange!75!red)}
+}
+
+
+\usetikzlibrary{positioning, quotes}
+\usetikzlibrary{pgfplots.colorbrewer}
+
+\pgfplotsset{colormap/PuBuGn}
+\pgfplotsset{colormap/PuRd}
+
+
+\newcommand{\distro}[4][40]{
+  \begin{tikzpicture}[thick]
+    \draw[dashed, dash pattern={on 2.3 off 2}] (0, .4) circle (12mm);
+    \draw[blue!60!black, very thick] plot[variable=\t, domain=-1:1, samples=#1] ({\t}, {#2 * exp(-10*(\t)^2) + #3 * exp(-60*(\t-0.6)^2 - \t) + #3 * exp(-60*(\t+0.7)^2 - 0.2) + #4 * 0.5 * exp(-50*(\t+0.3)^2) + #4 * exp(-50*(\t-0.2)^2 + 0.1)});
+    \draw[solid, ->] (-1, 0)--(1, 0);
+    \draw[solid, ->] (0, -0.5)--(0, 1.25);
+  \end{tikzpicture}
+}
+
+\newcommand{\ddistro}{
+\begin{tikzpicture}[thick,
+    declare function={mu1=1;},
+    declare function={mu2=2;},
+    declare function={sigma1=0.5;},
+    declare function={sigma2=1;},
+    declare function={normal(\m,\s)=1/(2*\s*sqrt(pi))*exp(-(x-\m)^2/(2*\s^2));},
+    declare function={bivar(\ma,\sa,\mb,\sb)=
+        1/(2*pi*\sa*\sb) * exp(-((x-\ma)^2/\sa^2 + (y-\mb)^2/\sb^2))/2;}]
+\begin{axis}[
+    ticks=none,
+    colormap name=whitered,
+    width=7.5cm,
+    view={45}{65},
+    enlargelimits=false,
+    grid=major,
+    domain=-1:4,
+    y domain=-1:4,
+    samples=26,
+    xlabel=$x_1$,
+    ylabel=$x_2$,
+    zlabel={$p$},
+    %colorbar,
+    %colorbar style={
+     %   at={(1,0)},
+      %  anchor=south west,
+       % height=0.25*\pgfkeysvalueof{/pgfplots/parent axis height},
+        %title={$P(x_1,x_2)$}
+    %}
+]
+\addplot3 [surf] {bivar(mu1,sigma1,mu2,sigma2)};
+\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (x,4,{normal(mu1,sigma1)});
+\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (-1,x,{normal(mu2,sigma2)});
+
+\draw [black!50] (axis cs:-1,0,0) -- (axis cs:4,0,0);
+\draw [black!50] (axis cs:0,-1,0) -- (axis cs:0,4,0);
+
+\node at (axis cs:-1,1,0.15) [pin=165:$P(x_1)$] {};
+\node at (axis cs:1.5,4,0.32) [pin=-15:$P(x_2)$] {};
+\end{axis}
+\draw[dashed, dash pattern={on 2.3 off 2}] (4., 3) circle (5cm);
+\end{tikzpicture}
+}
+
+\newcommand{\dddistro}{
+\begin{tikzpicture}[thick,
+    declare function={mu1=1;},
+    declare function={mu2=2;},
+    declare function={sigma1=0.5;},
+    declare function={sigma2=1;},
+    declare function={distro(\x,\y,\z,\w)=\x * exp(-10*(x)^2) + \y * exp(-60*(x-0.6)^2 - x) + \z * exp(-60*(x+0.7)^2 - 0.2) + \w * 0.5 * exp(-50*(x+0.3)^2) + \w * exp(-50*(x-0.2)^2 + 0.1);},
+    declare function={normal(\m,\s)=1/(2*\s*sqrt(pi))*exp(-(x-\m)^2/(2*\s^2));},
+    declare function={bivar(\ma,\sa,\mb,\sb)=
+        1/(2*pi*\sa*\sb) * exp(-((x-\ma)^2/\sa^2 + (y-\mb)^2/\sb^2))/2;},
+     declare function={dbivar(\xa,\ya,\za,\wa,\xb,\yb,\zb,\wb)=
+        (\xa * exp(-10*(x)^2) + \ya * exp(-60*(x-0.6)^2 - x) + \za * exp(-60*(x+0.7)^2 - 0.2) + \wa * 0.5 * exp(-50*(x+0.3)^2) + \wa * exp(-50*(x-0.2)^2 + 0.1))
+        *(\xb * exp(-10*(y)^2) + \yb * exp(-60*(y-0.6)^2 - y) + \zb * exp(-60*(y+0.7)^2 - 0.2) + \wb * 0.5 * exp(-50*(y+0.3)^2) + \wb * exp(-50*(y-0.2)^2 + 0.1));}]
+\begin{axis}[
+    ticks=none,
+    colormap name=PuBuGn,
+    width=7.5cm,
+    view={45}{65},
+    enlargelimits=false,
+    grid=major,
+    domain=-1:1,
+    y domain=-1:1,
+    samples=50,
+    xlabel=phase space $\vect{\varphi}$,
+    ylabel=stellar properties $\vect{\varpi}$,%,Z_{\rm star}$,
+    zlabel={$p$},
+    ylabel style={rotate=33, ,anchor=base,yshift=-0.4cm},
+    xlabel style={rotate=-33, ,anchor=base,yshift=-0.4cm}
+    %colorbar,
+    %colorbar style={
+     %   at={(1,0)},
+      %  anchor=south west,
+       % height=0.25*\pgfkeysvalueof{/pgfplots/parent axis height},
+        %title={$P(x_1,x_2)$}
+    %}
+]
+%\addplot3 [surf] {bivar(mu1,sigma1,mu2,sigma2)};
+\addplot3 [surf] {dbivar(1.8,1,0.75,1.5,1,0.75,1,1.8)};
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (x,1,{1.5*distro(1.8,1,0.75,1.5)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (x,4,{normal(mu1,sigma1)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (-1,x,{normal(mu2,sigma2)});
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (-1,x,{1.5*distro(1,0.75,1,1.8)});
+
+\draw [black!50] (axis cs:-1,0,0) -- (axis cs:4,0,0);
+\draw [black!50] (axis cs:0,-1,0) -- (axis cs:0,4,0);
+
+\node at (axis cs:-1,0.25,4.) [pin=10:$P(\vect{\varpi})$] {};
+\node at (axis cs:0.15,1,4.5) [pin=-35:$P(\vect{\varphi})$] {};
+\end{axis}
+\draw[dashed, dash pattern={on 2.3 off 2}] (2.9, 2.4) circle (3.3cm);
+\end{tikzpicture}
+}
+
+
+\newcommand{\ddddistro}{
+\begin{tikzpicture}[thick,
+    declare function={mu1=1;},
+    declare function={mu2=2;},
+    declare function={sigma1=0.5;},
+    declare function={sigma2=1;},
+    declare function={distro(\x,\y,\z,\w)=\x * exp(-10*(x)^2) + \y * exp(-60*(x-0.6)^2 - x) + \z * exp(-60*(x+0.7)^2 - 0.2) + \w * 0.5 * exp(-50*(x+0.3)^2) + \w * exp(-50*(x-0.2)^2 + 0.1);},
+    declare function={normal(\m,\s)=1/(2*\s*sqrt(pi))*exp(-(x-\m)^2/(2*\s^2));},
+    declare function={bivar(\ma,\sa,\mb,\sb)=
+        1/(2*pi*\sa*\sb) * exp(-((x-\ma)^2/\sa^2 + (y-\mb)^2/\sb^2))/2;},
+     declare function={dbivar(\xa,\ya,\za,\wa,\xb,\yb,\zb,\wb)=
+        (\xa * exp(-10*(x)^2) + \ya * exp(-60*(x-0.6)^2 - x) + \za * exp(-60*(x+0.7)^2 - 0.2) + \wa * 0.5 * exp(-50*(x+0.3)^2) + \wa * exp(-50*(x-0.2)^2 + 0.1))
+        *(\xb * exp(-10*(y)^2) + \yb * exp(-60*(y-0.6)^2 - y) + \zb * exp(-60*(y+0.7)^2 - 0.2) + \wb * 0.5 * exp(-50*(y+0.3)^2) + \wb * exp(-50*(y-0.2)^2 + 0.1));}]
+\begin{axis}[
+    ticks=none,
+    colormap name=PuRd,
+    width=7.5cm,
+    view={45}{65},
+    enlargelimits=false,
+    grid=major,
+    domain=-1:1,
+    y domain=-1:1,
+    samples=50,
+    xlabel=phase space $\vect{\varphi}$,
+    ylabel=stellar properties $\vect{\varpi}$,%,Z_{\rm star}$,
+    zlabel={$p$},
+    ylabel style={rotate=33, ,anchor=base,yshift=-0.4cm},
+    xlabel style={rotate=-33, ,anchor=base,yshift=-0.4cm}
+    %colorbar,
+    %colorbar style={
+     %   at={(1,0)},
+      %  anchor=south west,
+       % height=0.25*\pgfkeysvalueof{/pgfplots/parent axis height},
+        %title={$P(x_1,x_2)$}
+    %}
+]
+%\addplot3 [surf] {bivar(mu1,sigma1,mu2,sigma2)};
+\addplot3 [surf] {dbivar(.75,1.6,0.5,1.25,1,0.5,1.5,.8)};
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (x,1,{1.5*distro(.75,1.6,0.5,1.25)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (x,4,{normal(mu1,sigma1)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (-1,x,{normal(mu2,sigma2)});
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (-1,x,{1.5*distro(1,0.5,1.5,.8)});
+
+\draw [black!50] (axis cs:-1,0,0) -- (axis cs:4,0,0);
+\draw [black!50] (axis cs:0,-1,0) -- (axis cs:0,4,0);
+
+\node at (axis cs:-1,0.25,2.) [pin=10:$P(\vect{\varpi})$] {};
+\node at (axis cs:0.25,1,2.5) [pin=-65:$P(\vect{\varphi})$] {};
+\end{axis}
+\draw[dashed, dash pattern={on 2.3 off 2}] (2.9, 2.4) circle (3.3cm);
+\end{tikzpicture}
+}
+
+\newcommand{\dddddistro}{
+\begin{tikzpicture}[thick,
+    declare function={mu1=1;},
+    declare function={mu2=2;},
+    declare function={sigma1=0.5;},
+    declare function={sigma2=1;},
+    declare function={distro(\x,\y,\z,\w)=\x * exp(-10*(x)^2) + \y * exp(-60*(x-0.6)^2 - x) + \z * exp(-60*(x+0.7)^2 - 0.2) + \w * 0.5 * exp(-50*(x+0.3)^2) + \w * exp(-50*(x-0.2)^2 + 0.1);},
+    declare function={normal(\m,\s)=1/(2*\s*sqrt(pi))*exp(-(x-\m)^2/(2*\s^2));},
+    declare function={bivar(\ma,\sa,\mb,\sb)=
+        1/(2*pi*\sa*\sb) * exp(-((x-\ma)^2/\sa^2 + (y-\mb)^2/\sb^2))/2;},
+     declare function={dbivar(\xa,\ya,\za,\wa,\xb,\yb,\zb,\wb)=
+        (\xa * exp(-10*(x)^2) + \ya * exp(-60*(x-0.6)^2 - x) + \za * exp(-60*(x+0.7)^2 - 0.2) + \wa * 0.5 * exp(-50*(x+0.3)^2) + \wa * exp(-50*(x-0.2)^2 + 0.1))
+        *(\xb * exp(-10*(y)^2) + \yb * exp(-60*(y-0.6)^2 - y) + \zb * exp(-60*(y+0.7)^2 - 0.2) + \wb * 0.5 * exp(-50*(y+0.3)^2) + \wb * exp(-50*(y-0.2)^2 + 0.1));}]
+\begin{axis}[
+    ticks=none,
+    colormap name=PuBuGn,
+    width=7.5cm,
+    view={45}{65},
+    enlargelimits=false,
+    grid=major,
+    domain=-1:1,
+    y domain=-1:1,
+    samples=50,
+    xlabel=phase space $\vect{\varphi}$,
+    ylabel=stellar properties $\vect{\varpi}$,%,Z_{\rm star}$,
+    zlabel={$p$},
+    ylabel style={rotate=33, ,anchor=base,yshift=-0.4cm},
+    xlabel style={rotate=-33, ,anchor=base,yshift=-0.4cm}
+    %colorbar,
+    %colorbar style={
+     %   at={(1,0)},
+      %  anchor=south west,
+       % height=0.25*\pgfkeysvalueof{/pgfplots/parent axis height},
+        %title={$P(x_1,x_2)$}
+    %}
+]
+%\addplot3 [surf] {bivar(mu1,sigma1,mu2,sigma2)};
+
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (x,1,{1.5*distro(.5,1.26,1.5,.75)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (x,4,{normal(mu1,sigma1)});
+%\addplot3 [domain=-1:4,samples=31, samples y=0, thick, smooth] (-1,x,{normal(mu2,sigma2)});
+\addplot3 [domain=-1:1,samples=31, samples y=0, thick, smooth] (-1,x,{1.5*distro(1.4,0.75,0.5,1.8)});
+\addplot3 [surf] {dbivar(.5,1.26,1.5,.75,1.4,0.75,0.5,1.8)};
+
+\draw [black!50] (axis cs:-1,0,0) -- (axis cs:4,0,0);
+\draw [black!50] (axis cs:0,-1,0) -- (axis cs:0,4,0);
+
+\node at (axis cs:-1,0.25,2.75) [pin=10:$P(\vect{\varpi})$] {};
+\node at (axis cs:0.125,1,1.5) [pin=-5:$P(\vect{\varphi})$] {};
+\end{axis}
+\draw[dashed, dash pattern={on 2.3 off 2}] (2.9, 2.4) circle (3.3cm);
+\end{tikzpicture}
+}
+
+\begin{document}
+\begin{tikzpicture}[
+    node distance=1, very thick,
+    flow/.style={shorten >=3, shorten <=3, ->},
+    znode/.style={circle, fill=black!10, minimum size=22, inner sep=0},
+    every edge quotes/.style = {auto, font=\footnotesize, sloped}
+  ]
+
+ \node[outer sep=0, inner sep=0, align=left, label={[align=center] below:$p(\vect{\varphi},\vect{\varpi}|\vect{\theta}_2)$\\eDF for galaxy \textit{without} measurements}] (base) {\ddddistro{}};
+ \node[outer sep=0, inner sep=0, above=of base, label={above:galaxy parameters $\rightarrow$ input conditions}] (c0) {\hspace{-1cm}\includegraphics[width=7cm]{galazzi_feh.pdf}};
+ \node[outer sep=0, inner sep=0, left=of base, label={[align=center] below:$p(\vect{\varphi},\vect{\varpi}|\vect{\theta}_1)$\\eDF for galaxy \textit{with} measurements}] (f0) {\dddistro{}};
+ \node[outer sep=0, inner sep=0, right=of base, label={[align=center] below:$p(\vect{\varphi},\vect{\varpi}|\vect{\theta}_3)$\\eDF for galaxy \textit{with} measurements}] (f1) {\dddddistro{}};
+  
+ %\node[] (test) {$z_i$};
+ 
+ \node (A) at (-0.08, 6.4) {};
+ \node (B) at (1.85, 7.2) {};
+ \node (C) at (-1.825, 5.625) {};
+ \node (D) at (1.5, 2.75) {};
+ 
+ %\draw[flow, to path={-| (\tikztotarget)}]
+ \draw[flow]
+  (C) edge[bend left, out=15, in=225] node[near end, fill=white] {cNF$(\vect{\theta}_1=[p_{1}^1,p_{2}^1,\ldots])$} (f0) 
+  (B) edge[bend left, out=15, in=140] node[near end, fill=white] {cNF($\vect{\theta}_3=[p_{1}^{3},p_{2}^{3},\ldots])$} (f1) 
+  %(A) edge[bend left, out=80, in=158] node[pos=0.85, fill=white] {cNF($\vect{\theta}_2=[p_{1}^{2},p_{2}^{2},\ldots])$} (base);
+  (A) edge[bend left, out=70, in=140] node[pos=0.8, fill=white] {cNF($\vect{\theta}_2=[p_{1}^{2},p_{2}^{2},\ldots])$} (D);
+ 
+% \node (textA) at (-6.7, 5.) {cNF$(\vect{\theta}_1=[p_{1}^1,p_{2}^1,\ldots])$};
+% \node (textB) at (3.05, 3.8) {cNF($\vect{\theta}_2=[p_{1}^{2},p_{2}^{2},\ldots])$};
+ %\node (textC) at (6, 6.5) {cNF($\vect{\theta}_3=[p_{1}^{3},p_{2}^{3},\ldots])$}; 
+ 
+%  \node[znode, draw=red] (z0) {$z_0$};
+%  \node[znode, right=of z0] (z1) {$z_1$};
+ %\draw[flow] (C) edge[bend left, out=15, in=225] node[midway, fill=white] {$f_1(z_0)$} (f0);
+%
+%  \node[znode, right=2.5 of z1] (zi) {$z_i$};
+%  \node[znode, right=of zi] (zip1) {$z_{i+1}$};
+%  \draw[flow] (zi) -- node[above, midway] {$f_{i+1}(z_i)$} (zip1);
+%  \draw[flow, shorten <=5ex] (z1) -- node[pos=0.16, inner sep=1] {\textbf\dots} node[above, midway] {$f_i(z_{i-1})$} (zi);
+%
+%  \node[znode, draw=green!70!black, right=2.5 of zip1] (zk) {$z_k$};
+%  \draw[flow, shorten <=5ex] (zip1) -- node[pos=0.16, inner sep=1] {\textbf\dots} node[above, midway] {$f_k(z_{k-1})$} (zk);
+%  \node[right=0 of zk, scale=1.2] {$= x$};
+%  
+  %\node[outer sep=0, inner sep=0, below=0.2 of z0, label={below:$z_0 \sim p_0(z_0)$}] (f0) {\distro{1}{0}{0}};
+  %\node[outer sep=0, inner sep=0, below=0.2 of zi, label={below:$z_i \sim p_i(z_i)$}] (fi) {\distro[70]{1}{1}{0}};
+  %\node[outer sep=0, inner sep=0, below=0.2 of zk, label={below:$z_k \sim p_k(z_k)$}] (fk) {\distro[90]{0}{1}{1}};
+  
+  
+%\node[outer sep=0, inner sep=0, below=0.2 of zk, label={below:$\vect{z}_k \sim p_k(\vect{z}_k)$}] (f0) {\ddddistro{}};
+
+%\node[outer sep=0, inner sep=0, below=0.2 of z0, label={below:$z_0 \sim p_0(z_0)$}] (f0) {\ddistro{1}{0}{0}{0}{0}};
+
+%\node[outer sep=0, inner sep=0, below=0.2 of z0, label={below:$z_0 \sim p_0(z_0)$}] (f0) {\dddistro{0.5}{0}{0.1}{0.2}};
+
+%\node[outer sep=0, inner sep=0, below=0.2 of z0, label={below:$\vect{z}_0 \sim p_0(\vect{z}_0)$}] (f0) {\dddistro{}};
+
+\end{tikzpicture}
+\end{document}
