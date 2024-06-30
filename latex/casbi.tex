@@ -13,6 +13,7 @@ by maximizing the negative log likelihood as loss function and using the change 
     \text{log} \, p(x) &= \text{log} \, p(z) + \text{log} \left| \text{det} \left( \frac{\partial z}{\partial x} \right) \right| \\
     &= \text{log} \, p(z) + \sum_{i=1}^K \text{log} \left| \text{det} \left( \frac{\partial h_{i}}{\partial h_{i-1}} \right) \right| \\
     &= \text{log} \, p(z) + \sum_{i=1}^K \text{log} \left| \text{det} \left( \frac{\partial f_{\phi_i}^i(h_{i-1})}{\partial h_{i-1}} \right) \right|,
+\label{eq:ChangeOfVariable}
 \end{aligned}
 \end{equation}
 where the last term is the sum of the log determinant of the Jacobian of the transformations $f_{\phi_i}^i$. Once the model is trained it is easy to sample from the distribution $p(x)$ by sampling from the latent space $z$ and applying the inverse transformations $(f_{\phi_1}^1)^{-1} \circ \dots \circ (f_{\phi_K}^K)^{-1}$.
@@ -41,7 +42,7 @@ Many excellent framework for handling SBI analysis are already available, and CA
 \section{Simulator}\label{sec:NIHAO}
 The data-parameters pairs $(\mathbf{x}, \boldsymbol{\theta})$ needed to train the NPE are obtained from the Numerical Investigation of a Hundred Astrophysical Objects (\textbf{NIHAO}) project \cite{wangNIHAOProjectReproducing2015}. The \textbf{NIHAO} is a set of 100 cosmological zoom-in hydrodynamical simulations with halos that range from dwarf ($M_{star} \sim 5 \times 10^9 M_\odot$) to Milky Way like ($M_{star} \sim 2 \times 10^{12} M_\odot$). In order to handle these simulations, in CASBI the preprocessing is done with the use of the functions available in \texttt{pynbody} \cite{pontzenPynbodyNBodySPH2013}. In Fig. \ref{fig:NIHAO} we show face on samples of galaxies in the \textbf{NIHAO} simulations set.
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{./figure/NIHAO.jpeg}
     \caption{Face on \textbf{NIHAO} galaxies from \cite{wangNIHAOProjectReproducing2015}.}
@@ -54,12 +55,32 @@ The construction of the observables is done in by aggregating multiple subhalo i
 
 % In CASBI the inference is done on two set of parameters, the $N_{sub}^j$ and the \textbf{$\mathbf{\theta^j}$} = ($M_{star, i}^j, M_{dm, i}^j, \tau_i^j $) with $i=2, ..., N_{sub}$, which are respectively the total stellar mass, the total dark matter mass, and the infall time (in Gyr) of the $i$-th accreted object in the $j$-th sample. The inference pipeline is further described in  the following section.
   
-The goal of CASBI is to beeing able to recover $\mathbf{\theta^i}$ for each of the subhalos in the galactic halo from the observable \textbf{$\mathbf{x^j}$}$=\sum_i x^j_i$, and gaining insight on how many subhalos there are. Among all the possible parameters available from the simulations, we have decided to limit ourself to stellar mass $M_{star}$ and age of the galaxy $\tau$, also called infall time due to their equivalence in the assumption of quenched star formation after accreation.  
+The goal of CASBI is to being able to recover $\mathbf{\theta^i}$ for each of the subhalos in the galactic halo from the observable \textbf{$\mathbf{x^j}$}$=\sum_i x^j_i$, and gaining insight on how many subhalos there are. Among all the possible parameters available from the simulations, we have decided to limit ourself to stellar mass $M_{star}$ and age of the galaxy $\tau$, also called infall time due to their equivalence in the assumption of quenched star formation after accretion.  
+
+\section{Free Form Flow as a surrogate simulator} 
+If it is possible to generate new data pairs at inference time, by sampling the prior and passing the samples to the simulator, and sequential repeat the inference it is possible to achieve better accuracy, as it shown empirically in Fig. \ref{fig:sequential_SBI}, at the cost of losing the \textbf{ammortize} property.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{./figure/sequential_SBI.png}
+    \caption{Different SBI method accuracy over 10 independent test with similar simulation budget. The error is defined in terms of the Classifier 2-sample Test (C2ST), with 0.5 being the optimal score. Figure credit \cite{hoLtUILIAllinOneFramework2024}. }
+    \label{fig:sequential_SBI}
+\end{figure}
+
+Inspired by this result, we have decided to explorer the possibility of implement Sequential Neural Posterior Estimate (SNPE) in CASBI. The use of the simulator at inference time is not usually possible for cosmological application, in fact running those simulations is both computationally and time consuming. We have decided to implement a surrogate simulator that aims to learn how to sample new observation $x$ from the Likelihood probability $p(x|\theta)$. The surrogate simulator that we adopted was Free Form Flow (FFF) \cite{draxlerFreeformFlowsMake2024}, a Normalizing Flow architecture that relaxes the need for invertible transformations and only requires dimensionality preservation at each step. After trying to use the more common Neural Spline Flow (NSF), like in \cite{wolfGalacticFlowLearningGeneralized2023}, we decided to adopt FFF due to higher fidelity in the generation of new observation $x$, using the $D$-statistic of the two dimensional Kolmogorov-Smirnov Test as fidelity metric \cite{lopesTwodimensionalKolmogorovSmirnovTest}. 
+The major innovation in Free Form Flow with respect to classical NF are:
+
+\begin{itemize}
+\item Gradient Trick: in order to efficiently estimate the determinant of the Jacobian in equation \ref{eq:ChangeOfVariable} the authors propose to 
+
+\item Inverse approximation:
+\end{itemize}
+
+
 \section{Two step Inference}\label{sec:Two step Inference}
 The objective of the inference is not trivial, since in order to recover the parameters of the building blocks of the Milky Way like galaxy we need to fix the dimensionality of the priors. This is equivalent to have complete knowledge on the number of substructure that are present in the galactic halo. In the case of not fully phase mixed structure, the dynamical information could be use to help to disentangle this structure, and also to separate them from the host halo background. In CASBI we do not leverage on this information because it would require to construct stellar halo that have aggregated objects that are not dynamically biased. We leave this integration for future work. We decided to tackle this problem in the case of fully mixed remnants separating the inference in two steps, in the first we inferr the number of subhalos and in the second the parameters of each of the subhalos:
 \begin{enumerate}
     \item \textbf{Inference of the number of substructure}: In this step we train a NPE to recover the posterior distribution of the number of substructure $N_{sub}$, by using the observable \textbf{$\mathbf{x^j}$}. The prior for the parameter is assumed to be uniform between 2 and 100. This boundaries were selected in accordance to the order of magnitude of substructures found in \cite{deasonUnravellingMassSpectrum2023}. For each of the possible $N_{sub}$ we extract 1000  $x^j = \sum_{i=1}^{N_{sub}} x_i^j$ from the \textbf{NIHAO} simulations, in order to have a total of almost $ 10^5$ SBI training couples $(N_{sub}^j, x^j)$, with 20 \% used as validation, and we use the same process to generate almost $10^4$ test set samples, making sure that the same combinations of \texttt{Galaxy\_name} attribute weren't shown in training and test. The training of the NPE is done using the \texttt{sbi} backend, using 4 \texttt{nsf} (neural spline flow) with 10 layers and 100 neurons each. In order to take full advantage of the image-like structure of the data, we adopt as embedding network a Convolutional Neural Network (CNN) to reduce the dimensionality of the input of the NPE from $64 \times 64$ to 128. The CNN had 3 convolutional layers with 8, 16 and 32 filter, 3 maxplooling layers and 3 fully connected layers with 512, 256, 128 neurons.
-    In this step we have not impose that the $N_{sub}$ must be a discrete variable, and we have decide to just truncate the inferred value to the closet value. To the knowledge of the author no SBI framework has implemented a way of dealing with the inference of discrete random variables, so we leave a more precise implementation as a future work. We propose instead another method to obtain the number of substructure, by casting this inference as a classification problem. We use a SkipConnection CNN \footnote{The architecture is the same as the embedding network described before with the addition of the Skip Connection layer in the fully connected layer, where the output of the previous layer gets added to the output before beeing passed trough the activation function, alleviating the vanishing gradient problem and allowing for better accuracy.}, considering the number of substructure as the label to assign to each $x^j$.
+    In this step we have not impose that the $N_{sub}$ must be a discrete variable, and we have decide to just truncate the inferred value to the closet value. To the knowledge of the author no SBI framework has implemented a way of dealing with the inference of discrete random variables, so we leave a more precise implementation as a future work. We propose instead another method to obtain the number of substructure, by casting this inference as a classification problem. We use a SkipConnection CNN \footnote{The architecture is the same as the embedding network described before with the addition of the Skip Connection layer in the fully connected layer, where the output of the previous layer gets added to the output before being passed trough the activation function, alleviating the vanishing gradient problem and allowing for better accuracy.}, considering the number of substructure as the label to assign to each $x^j$.
 
     \item \textbf{Inference of $\mathbf{\theta^j}$}: Once we have the estimate $\tilde{N}_{sub}$, whether using dynamical information, the inference pipeline or the classification method, we can proceed to the inference of the parameters $\mathbf{\theta^j_i} $. The prior for the parameters are assumed to be uniform between the minimum and maximum values available for the galaxies that we have filtered from the \textbf{NIHAO} simulations. We extract $10^5$ random samples of $\tilde{N}_{sub}$ snapshots from the \textbf{NIHAO} simulations, and we construct the observable 
     couples $(x^j, (\theta_1^j, \dots, \theta_{\tilde{N}_{sub}}^j))$, with 20 \% used as validation. We repeat the same process to generate $10^3$ test set samples, making sure that the same combinations of \texttt{Galaxy\_name} attribute weren't shown in training and test to perform calibration of the inference model. The training of the NPE is done using the \texttt{sbi} backend, using 4 \texttt{nsf} (neural spline flow) with 10 layers and 100 neurons each. Once again we use the same CNN architecture of the previous step as embedding for our observation $x^j$.
@@ -81,20 +102,20 @@ Even though highly modular, this two step inference has some limitations: the ac
     \centering
     \includegraphics[width=1\textwidth]{./figure/CASBI_complete.png}
     \caption{CASBI pipeline.}
-    \label{fig:CASBI}
+    \label{fig:CASBI_complete}
 \end{figure}
 
-In order to avoid the need for a two step inference and still retaining the possibility to access to the information on how many subhalos populate a given abundance plane, we have decided to condition the SBI model to retrieve the $i$-most massive subhalo of the $j$-th stellar halo. In this way the NPE is trained on $(x, \theta) = (i, x^j, \theta_i^j)$ pairs, where $x^j = \sum_i x_i^j$ and the $x_i^j$ are ordered accordingly to their stellar mass. In this way the $j$-th stellar halo abundance plane is shown as many times as the number of subhalos present in it, so in order to guide the model into inferring the right parameters $\theta_i^j$ the embedding is conditioned on the integer $i$-th by concatenating it to each input of the fully connected layers of the CNN used to embed the observations, and it is concatenate also before passing the embedded information to the Normalizing Flow. 
-
-In order to be more realistic in the creation of a mock galaxy halo we have decided to adopt a sampling scheme for the subhalos that is based on the luminosity function described in \cite{koposovLuminosityFunctionMilky2008}. The luminosity function described the subhalo distribution in a range of luminosities that spans from $M_V = -2$ all the way to the luminosity of the Large Magellanic cloud:
+In order to avoid the need for a two step inference and still retaining the possibility to access to the information on how many subhalos populate a given abundance plane, we have decided to condition the SBI model to retrieve the $i$-most massive subhalo of the $j$-th stellar halo. In this way the NPE is trained on $(x, \theta) = (i, x^j, \theta_i^j)$ pairs, where $x^j = \sum_i x_i^j$ and the $x_i^j$ are ordered accordingly to their stellar mass $M_{star}$. In this way the $j$-th stellar halo abundance plane is shown as many times as the number of subhalos present in it, and in order to guide the model into inferring the right parameters $\theta_i^j$ the embedding is conditioned on the integer $i$-th by concatenating it to each input of the fully connected layers of the CNN used to embed the observations, and it is concatenate also before passing the embedded information to the Normalizing Flow. This conditioning can be appreciated also in the lower part of Fig. \ref{fig:CASBI_complete}, in which the CASBI SBI pipeline shows the integer $i$ as a red node concatenated to each layer of the embedding network. 
+            
+In order to create more realistic mock galaxy halo we have decided to adopt a sampling scheme for the subhalos that is based on the luminosity function described in \cite{koposovLuminosityFunctionMilky2008}. The luminosity function described the subhalo distribution in a range of luminosities that spans from $M_V = -2$ all the way to the luminosity of the Large Magellanic cloud:
 \begin{equation}
     \frac{dN}{d M_V} = 10 \times 10^{0.1(M_V + 5)} 
 \end{equation}
-we can then manipulate this equation to express it as a function of the Luminosity in solar luminosity $L$:
+we can then manipulate this equation to express it as a function of the Luminosity $L$:
 \begin{equation}
 \begin{split}
-    \frac{dN}{dL} &= \frac{dN}{d M_V} \times \frac{dM_V}{dL} \\
-    &= 10^{0.1(M_{V, \odot} - 2.5\text{log}_{10} (L) +5) +1} \times (-2.5 L^{-1}) \sim L^{-1.25}\\
+    \frac{dN}{dL} &= \frac{dN}{d M_V} \times \frac{dM_V}{dL} 
+    = 10^{0.1(M_{V, \odot} - 2.5\text{log}_{10} (L) +5) +1} \times (-2.5 L^{-1}) \sim L^{-1.25}\\
 \end{split}
 \end{equation}
 
@@ -103,14 +124,11 @@ which in the end can be integrated to obtain the number of subhalos with luminos
     N(<L) = K \times L^{\alpha},
 \label{eq:CumLuminosity}
 \end{equation}
-where K represent a constant and $\alpha=-0.25$ is the single power law exponent obtained by \cite{koposovLuminosityFunctionMilky2008}. Other work based not only on SDSS observations like \cite{koposovLuminosityFunctionMilky2008} but also on $\Lambda$CDM $N$-body simulation set $\alpha = -0.9 \pm 0.2$ (\cite{tollerudHundredsMilkyWay2008}). We fix this value to -1.25 and we leave the analysis of the impact of this choice as a future work.
-Assuming $L_\odot = M_\odot$, we normalize equation \ref{eq:CumLuminosity} after setting the support to be the interval of masses that we have available in our catalogue of NIHAO simulations ($10^5 M_\odot < M < 6 \cdot 10^9 M_\odot$) and we sample from this distributions using an inverse scheme. After obtaining the analytic samples we take the first and second Nearest Neighbors (NN) that are within a  
-10\% of the analytic sampled mass as subhalo for our mock halos. We have also set a mass budget for our mock halo of $M=1.4 \pm 0.2 \times 10^9 M_\odot$ based on \cite{deasonTotalStellarHalo2019}, and each time a subhalo is sampled we reduce the total mass budget by the mass of the NN that we have used. We decision to put a total mass halo was made in order to avoid to set a fixed number of subhalos that needs to be sampled for each stellar halo. During this iterative procedure we make sure to sample non repeated subhalo within the same mock halo and we avoid repetitions of the same combinations of subhalos between mock subhalos both within training and test set and across these two sets.
+where K represent a constant and $\alpha=-0.25$ is the single power law exponent obtained by \cite{koposovLuminosityFunctionMilky2008}. Other work based not only on SDSS observations like \cite{koposovLuminosityFunctionMilky2008} but also on $\Lambda$CDM $N$-body simulation set $\alpha = -0.9 \pm 0.2$ (\cite{tollerudHundredsMilkyWay2008}). We fix this value to -0.25 and we leave the analysis of the impact of this choice as a future work.
+Assuming $L_\odot = M_\odot$, we normalize equation \ref{eq:CumLuminosity} after setting the support to be the interval of masses that we have available in our catalogue of NIHAO simulations ($10^5 M_\odot < M_{star} < M_{star}^{halo}$) and we sample from this distributions using an inverse scheme, where $ M_{star}^{halo}$ is the mass budget for our mock halo of $M=1.4 \pm 0.2 \times 10^9 M_\odot$ based on \cite{deasonTotalStellarHalo2019}. After obtaining the analytic samples we take the first and second Nearest Neighbors (NN) that are within a 10\% of the analytic sampled mass as subhalo for our mock halos and we reduce the total mass budget by the mass of the NN that we have used. The choice of the mass budget can be adapted and comes from observation that do not take into account Large and Small Magellanic Cloud, but it can be customized or even set into a range of stellar budget mass at each generation of a mock stellar halo. During this iterative procedure we make sure to sample non repeated subhalo within the same mock halo and we avoid repetitions of the same combinations of subhalos between mock subhalos both within training and test set and across these two sets.
 
 In Fig. \ref{fig:CASBI} we show the CASBI pipeline. The modularity of the SBI technique is fully integrated, allowing to change all the components of this pipeline. The Template library can be set to be a different any kind of suite of simulated galaxies (e.g. \cite{pillepichMilkyWayAndromeda2023}), the sampling scheme can incorporate different luminosity function and stellar halo budget, the NPE and embedding network architecture and hyperparameter can be modified to allow for higher accuracy and posterior coverage thanks to the \texttt{optuna} grid search implementation, and surrogate models (Free Form Flow FFF \cite{draxlerFreeformFlowsMake2024}, GRUMPY \cite{kravtsovGRUMPYSimpleFramework2022}) can be implemented to allow for the sequential version of the NPE.      
 
-
-\section{Free Form Flow as a surrogate simulator}
 
 \section{Calibration}
 
