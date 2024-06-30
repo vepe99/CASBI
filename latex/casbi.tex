@@ -58,7 +58,7 @@ The construction of the observables is done in by aggregating multiple subhalo i
 The goal of CASBI is to being able to recover $\mathbf{\theta^i}$ for each of the subhalos in the galactic halo from the observable \textbf{$\mathbf{x^j}$}$=\sum_i x^j_i$, and gaining insight on how many subhalos there are. Among all the possible parameters available from the simulations, we have decided to limit ourself to stellar mass $M_{star}$ and age of the galaxy $\tau$, also called infall time due to their equivalence in the assumption of quenched star formation after accretion.  
 
 \section{Free Form Flow as a surrogate simulator} 
-If it is possible to generate new data pairs at inference time, by sampling the prior and passing the samples to the simulator, and sequential repeat the inference it is possible to achieve better accuracy, as it shown empirically in Fig. \ref{fig:sequential_SBI}, at the cost of losing the \textbf{ammortize} property.
+If it is possible to generate new data pairs at inference time, by sampling the prior and passing the samples to the simulator, and sequentially repeat the inference it is possible to achieve better accuracy, as it shown empirically in Fig. \ref{fig:sequential_SBI}, at the cost of losing the \textbf{ammortize} property.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{./figure/sequential_SBI.png}
@@ -66,14 +66,36 @@ If it is possible to generate new data pairs at inference time, by sampling the 
     \label{fig:sequential_SBI}
 \end{figure}
 
-Inspired by this result, we have decided to explorer the possibility of implement Sequential Neural Posterior Estimate (SNPE) in CASBI. The use of the simulator at inference time is not usually possible for cosmological application, in fact running those simulations is both computationally and time consuming. We have decided to implement a surrogate simulator that aims to learn how to sample new observation $x$ from the Likelihood probability $p(x|\theta)$. The surrogate simulator that we adopted was Free Form Flow (FFF) \cite{draxlerFreeformFlowsMake2024}, a Normalizing Flow architecture that relaxes the need for invertible transformations and only requires dimensionality preservation at each step. After trying to use the more common Neural Spline Flow (NSF), like in \cite{wolfGalacticFlowLearningGeneralized2023}, we decided to adopt FFF due to higher fidelity in the generation of new observation $x$, using the $D$-statistic of the two dimensional Kolmogorov-Smirnov Test as fidelity metric \cite{lopesTwodimensionalKolmogorovSmirnovTest}. 
-The major innovation in Free Form Flow with respect to classical NF are:
+Inspired by this result, we have decided to explorer the possibility of implement Sequential Neural Posterior Estimate (SNPE) in CASBI. The use of the simulator at inference time is not usually possible for cosmological application, in fact running those simulations is both computationally and time consuming. We have decided to implement a surrogate simulator that aims to learn how to sample new observation $x$ from the Likelihood probability $p(x|\theta)$. The surrogate simulator that we adopted was Free Form Flow (FFF) \cite{draxlerFreeformFlowsMake2024}, a Normalizing Flow architecture that relaxes the need for invertible transformations and only requires dimensionality preservation at each step. After trying to use the more common Neural Spline Flow (NSF), like in \cite{wolfGalacticFlowLearningGeneralized2023}, we decided to adopt FFF due to higher fidelity in the generation of new observation $x$, using the $D$-statistic of the two dimensional Kolmogorov-Smirnov Test as fidelity metric \cite{lopesTwodimensionalKolmogorovSmirnovTest}. The architecture of the FFF is composed of a encoder and a decoder that take the role respectively of the forward transformation $f_\theta$ to the normally distributed latent space, and an approximation of the inverse transformation $g_\phi$ that map the latent space to the observation space. The major innovation in Free Form Flow that are needed to understand the choice and flexibility of this architecture are:
 
 \begin{itemize}
-\item Gradient Trick: in order to efficiently estimate the determinant of the Jacobian in equation \ref{eq:ChangeOfVariable} the authors propose to 
+\item Gradient Trick: since the most computationally expensive part of the loss function of normalizing flow is calculating the Jacobian of the transformation, the authors propose to  estimate its gradient using a pairs of vector-Jacobian and Jacobian-vector products easily available in standard automatic differentiation libraries. The gradient trick is implement in the pipeline by rewriting the maximum likelihood loss derived from equation \ref{eq:ChangeOfVariable} as:
+\begin{equation}
+        \mathcal{L}_{ML}^{f^{-1}} = \mathbb{E}_{x, v}[-\text{log}p(f_\theta (x)) - v^T J_\theta \text{SG}(J^{-1}v)], 
+\label{eq:MLloss}
+\end{equation}
+where $v$ is a random vector with unit variance with the same dimensions as $x$, and SG is the Stop Gradient operation. This loss enable to train normalizing flow architecture with a tractable inverse function whose Jacobian determinant is not easily accessible.
 
-\item Inverse approximation:
+\item Inverse Approximation: classical normalizing flow architecture require the access the analytic inverse of the transformations $f_\theta^{-1}$, either by constructing Invertible Neural Network or defining the flow with a differential equation with a known reverse time process. The authors propose to approximate the inverse with a learned inverse $g_\phi \approx f_\theta^{-1}$. The loss function is then modified to learn this approximation with the following contribution, called reconstruction loss: 
+
+\begin{equation}
+    \mathcal{L}_{R} = \frac{1}{2}\mathbb{E}_{x}[|| x - g_\phi(f^{-1}_\theta (x)) ||^2].
+\label{eq:Rloss}
+\end{equation}
+This part allows to remove the architectural constrains from $f_\theta$ and $g_\phi$ except for preserving the dimensions.
 \end{itemize}
+
+Combining both contributions from equations \ref{eq:MLloss} and \ref{eq:Rloss} leads to the following loss function:
+
+\begin{equation}
+    \mathcal{L}_{FFF}^g = \mathcal{L}_{ML}^{g} + \beta \mathcal{L}_{R},
+\label{eq:FFFloss}
+\end{equation}
+where the $\mathcal{L}_{ML}^{g}$ is used in place of the $\mathcal{L}_{ML}^{f^{-1}}$ with the justification that they have the same critical points and the $\beta$ is a trade off hyperparameter. For a more in depth explanation and a mathematical foundation of FFF architecture we refer to the original paper \cite{draxlerFreeformFlowsMake2024}. 
+
+In CASBI we have choose to use a Skip Connection Multi Layer Perceptron (SC-MLP) as both encoder and decoder, and we have followed the suggestions in Appendix B.1 of \cite{draxlerFreeformFlowsMake2024} to make this architecture conditional by concatenating to each layer the parameters $\theta$ sampled from our prior distributions.  
+Even though the FFF architecture has good interpolation capability, returning average $D$-statics values lower than 0.3 when reconstructing the test set, the problem of sampling independent parameters values from the prior distributions make the net to extrapolate in regions of the conditional space where no data were shown, degrading the generate abundance halo. For example it could happen that a very massive $M_{star}$ is sampled together with a very low infall time $\tau$, which is a combination of parameters that is not physical and hence was not shown during training, so the generated halo is not realistic, namely it has a very high $D$-statistic value. Do to general poorer performance of SNPE using the FFF as a surrogate simulator, we have decided to not include this architecture in the analysis. Future work could incorporate some level of correlation in the prior distribution of the parameters, since currently the \texttt{ltu-ili} package allows only for independent priors.
+
 
 
 \section{Two step Inference}\label{sec:Two step Inference}
@@ -131,5 +153,35 @@ In Fig. \ref{fig:CASBI} we show the CASBI pipeline. The modularity of the SBI te
 
 
 \section{Calibration}
+This section is highly inspired by \cite{hoLtUILIAllinOneFramework2024}. In posterior estimation we aim to maximize the constraining of $\theta$ given the observable $x_0$ and whether the uncertainties are calibrated to our training data. These criteria are naturally adversarial and the this problem can be interpreted as another instance of the bias-variance trade off. 
+It is possible to confront various NPE accuracy by comparing the cumulative posterior value of the test set, $\hat{\mathcal{P}}(D_{test})=\prod_i^{N_{test}} \hat{\mathcal{P}}(\theta_i|x_i)$, since a larger posterior value concentrate more probability mass around the true value, which translate directly to a higher constraining power. Moreover it is possible to gauge the overall constrain power against a \textit{ground truth} posterior, namely long-run MCMC output. A classical metric to confront posterior samples is the C2ST, which is defined as the accuracy of a classifier to distinguish between true and infered posterior samples, with a C2ST value of 0.5 implying that the two sampled distributions are the same. 
 
+The calibration of the model uncertainties can be obtain using the Probability Integral Transformation (PIT), defined as the cumulative density function of our posterior given $x_0$:
+
+\begin{equation}
+    \text{PIT}(\theta|x_0) = \int_{-\infty}^{\theta} \hat{\mathcal{P}}(\theta|x_0) d\theta. 
+\end{equation}
+
+Due to the poor scaling of the PIT to higher dimension, it is better to construct and estimate PIT value as:
+
+\begin{equation}
+    \text{PIT}(\theta|x_0) = \mathbb{E}_{\hat{\theta}\sim \hat{\mathcal{P}}(\theta|x)}[\Theta (\hat{\theta} - \theta)],
+\label{eq:estimated_PIT}
+\end{equation}
+
+where $\Theta$ is the Heaviside step function. The PIT counts the number of time the posterior samples $\hat{\theta}$ fall below the true parameter value $\theta$.  If we match the true posterior everywhere we expect the PIT value to be distributed uniformly in range [0, 1] for each of the test set samples. Usually the PIT distribution is studied using percentile-percentile (P-P) plots, comparing the CDF of the PIT value to the CDF of a uniform distribution. This tool can be used to constrain over /\ sunder dispersions. In Fig. \ref{fig:calibration} we show an example of uncalibrated posteriors approximation and the corresponding P-P plot \footnote{The plot is not accurate, it is created to give an idea of the general relation between the posterior behavior and how it is reflected in the P-P plot.}. Since as the dimensionality of $\theta$ increase the proper coverage requires exponentially more samples, we decide to rely on the PIT of each component $\theta_i$ of the marginal posterior, and we expect that the value
+\begin{equation}
+    \text{PIT}(\theta_i|x_0) = \mathbb{E}_{\hat{\theta}\sim \hat{\mathcal{P}}(\theta_i|x)}[\Theta (\hat{\theta_i} - \theta_i)],  
+\label{eq:estimated_marginal_PIT}
+\end{equation}
+has the same properties as the PIT obtain in equation \ref{eq:estimated_PIT} if the model is globally consistent on the test set.
+
+Lastly, as an approximation to check multivariate posterior coverage, we use the Test of Accuracy with Random Points (TARP) \cite{lemosSamplingBasedAccuracyTesting}. TARP constructs, in the limit of sufficient samples, an estimate of posterior coverage which is guaranteed to converge to the true posterior coverage. 
+All of the previously  described posterior coverage method are already integrated in the \texttt{ltu-ili} package. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{./figure/calibration.png}
+    \caption{Examples of SBI uncalibrated posterior. Left panel: over (red) and under (green) posterior obtained from the same data $\theta$, for which the true posterior (blue) is shown. Right panel: P-P plot for the two uncalibrated posterior. The goal of the calibration is to obtain a distribution that is underconfident and as close as possible to the diagonal. This figure is inspired by \cite{falkiewiczCalibratingNeuralSimulationBased}. }
+    \label{fig:calibration}
+\end{figure}
 
