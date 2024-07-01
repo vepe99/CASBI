@@ -57,7 +57,7 @@ The construction of the observables is done in by aggregating multiple subhalo i
   
 The goal of CASBI is to being able to recover $\mathbf{\theta^i}$ for each of the subhalos in the galactic halo from the observable \textbf{$\mathbf{x^j}$}$=\sum_i x^j_i$, and gaining insight on how many subhalos there are. Among all the possible parameters available from the simulations, we have decided to limit ourself to stellar mass $M_{star}$ and age of the galaxy $\tau$, also called infall time due to their equivalence in the assumption of quenched star formation after accretion.  
 
-\section{Free Form Flow as a surrogate simulator} 
+\section{Free Form Flow as a surrogate simulator} \label{sec:SurrogateSimulator}
 If it is possible to generate new data pairs at inference time, by sampling the prior and passing the samples to the simulator, and sequentially repeat the inference it is possible to achieve better accuracy, as it shown empirically in Fig. \ref{fig:sequential_SBI}, at the cost of losing the \textbf{ammortize} property.
 \begin{figure}[H]
     \centering
@@ -113,17 +113,11 @@ Even though highly modular, this two step inference has some limitations: the ac
 
 \section{Realistic halo and 1 step Inference}\label{sec:Realistic halo and 1 step Inference}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{./figure/CASBI.png}
-    \caption{CASBI pipeline.}
-    \label{fig:CASBI}
-\end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{./figure/CASBI_complete.png}
-    \caption{CASBI pipeline.}
+    \caption{CASBI pipeline. In our analysis we have fixed the \textbf{Template Library} to be a subsample of the \textbf{NIHAO} simulations, as described in Section \ref{sec:NIHAO}, but it can be swapped with user-choice simulations. The choice of the Template Library incorporate all the assumption that we make on the chemical enrichment history of Galaxies, the dynamical effects that accreted objects undergo, and the cosmology, making this part the principal cause of possible mispecification. During \textbf{sampling} we sample non-repeated subhalos aiming to reproduce a \textbf{Luminosity function} $N(<L)$ that can be set by the user, for our analysis we have taken it from \cite{koposovLuminosityFunctionMilky2008}.  Moreover a \textbf{stellar mass budget} can be set to generate realistic stellar halo without the need of fixing the number of subhalos (even though a maximum number of subhalos is set in our analysis for computational reasons). In our analysis we fixed the stellar mass budget of the halo accordingly to \cite{deasonTotalStellarHalo2019}, but it can be set by the user accordingly to the estimated total stellar mass available in the observation that we want to infer on. The \textbf{SBI} pipeline can incorporate a \textbf{Surrogate Simulator} to perform the sequential version of NPE. In our analysis we do not adopt this component as described in Section \ref{sec:SurrogateSimulator}. The \textbf{Observational Realism} encapsulate all that concerns bridging the gap between simulation and observation, i.e. uncertainties of spectroscopic surveys, selection functions, etc. In our analysis we haven't inject this component into the pipeline because we aimed to understand the limitations of this technique when no observational contamination is involved.}
     \label{fig:CASBI_complete}
 \end{figure}
 
@@ -143,13 +137,13 @@ we can then manipulate this equation to express it as a function of the Luminosi
 
 which in the end can be integrated to obtain the number of subhalos with luminosity lower the $L$ that we are going to adopt for sampling stellar halo:
 \begin{equation}
-    N(<L) = K \times L^{\alpha},
+    N(<L) = K \times L^{1+\alpha},
 \label{eq:CumLuminosity}
 \end{equation}
-where K represent a constant and $\alpha=-0.25$ is the single power law exponent obtained by \cite{koposovLuminosityFunctionMilky2008}. Other work based not only on SDSS observations like \cite{koposovLuminosityFunctionMilky2008} but also on $\Lambda$CDM $N$-body simulation set $\alpha = -0.9 \pm 0.2$ (\cite{tollerudHundredsMilkyWay2008}). We fix this value to -0.25 and we leave the analysis of the impact of this choice as a future work.
+where K represent a constant and $\alpha=-1.25$ is the single power law exponent obtained by \cite{koposovLuminosityFunctionMilky2008}. Other work based not only on SDSS observations like \cite{koposovLuminosityFunctionMilky2008} but also on $\Lambda$CDM $N$-body simulation set $\alpha = -1.9 \pm 0.2$ (\cite{tollerudHundredsMilkyWay2008}). We fix this value to -1.25 and we leave the analysis of the impact of this choice as a future work.
 Assuming $L_\odot = M_\odot$, we normalize equation \ref{eq:CumLuminosity} after setting the support to be the interval of masses that we have available in our catalogue of NIHAO simulations ($10^5 M_\odot < M_{star} < M_{star}^{halo}$) and we sample from this distributions using an inverse scheme, where $ M_{star}^{halo}$ is the mass budget for our mock halo of $M=1.4 \pm 0.2 \times 10^9 M_\odot$ based on \cite{deasonTotalStellarHalo2019}. After obtaining the analytic samples we take the first and second Nearest Neighbors (NN) that are within a 10\% of the analytic sampled mass as subhalo for our mock halos and we reduce the total mass budget by the mass of the NN that we have used. The choice of the mass budget can be adapted and comes from observation that do not take into account Large and Small Magellanic Cloud, but it can be customized or even set into a range of stellar budget mass at each generation of a mock stellar halo. During this iterative procedure we make sure to sample non repeated subhalo within the same mock halo and we avoid repetitions of the same combinations of subhalos between mock subhalos both within training and test set and across these two sets.
 
-In Fig. \ref{fig:CASBI} we show the CASBI pipeline. The modularity of the SBI technique is fully integrated, allowing to change all the components of this pipeline. The Template library can be set to be a different any kind of suite of simulated galaxies (e.g. \cite{pillepichMilkyWayAndromeda2023}), the sampling scheme can incorporate different luminosity function and stellar halo budget, the NPE and embedding network architecture and hyperparameter can be modified to allow for higher accuracy and posterior coverage thanks to the \texttt{optuna} grid search implementation, and surrogate models (Free Form Flow FFF \cite{draxlerFreeformFlowsMake2024}, GRUMPY \cite{kravtsovGRUMPYSimpleFramework2022}) can be implemented to allow for the sequential version of the NPE.      
+In Fig. \ref{fig:CASBI_complete} we show the CASBI pipeline. The modularity of the SBI technique is fully integrated, allowing to change all the components of this pipeline. The Template library can be set to be a different suite of simulated galaxies (e.g. \cite{pillepichMilkyWayAndromeda2023}), the sampling scheme can incorporate different luminosity function and stellar halo budget, the NPE and embedding network architecture and hyperparameter can be modified to allow for higher accuracy and posterior coverage thanks to the \texttt{optuna} grid search implementation, and surrogate models (Free Form Flow FFF \cite{draxlerFreeformFlowsMake2024}, GRUMPY \cite{kravtsovGRUMPYSimpleFramework2022}) can be implemented to allow for the Sequential version of the NPE.      
 
 
 \section{Calibration}
