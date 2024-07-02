@@ -84,7 +84,7 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.
     np.random.seed(j)
     N=2
     nbrs = NearestNeighbors(n_neighbors=N, algorithm='ball_tree').fit(mass_nn)
-    M_tot = 6 * 1e9
+    M_tot = 1.4 * 1e9
     samples = []
     masses =  []
     times = []
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     alpha = 1.25
    
     mass_name = data[['star_log10mass', 'Galaxy_name', 'infall_time']].drop_duplicates()
-    mass_name = mass_name[mass_name['star_log10mass']<6*1e9]
+    mass_name = mass_name[mass_name['star_log10mass']<1.4*1e9]
     min_feh, max_feh = data['feh'].min(), data['feh'].max() 
     min_ofe, max_ofe = data['ofe'].min(), data['ofe'].max()
     mass_nn = mass_name['star_log10mass'].values.reshape(-1, 1)
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     galaxy_name = mass_name['Galaxy_name'].values.reshape(-1, 1)
     
     test_set_sample = 100
-    train_set_sample = 1_000
+    train_set_sample = 5_000
 
     mass_nn = mass_name['star_log10mass'].values.reshape(-1, 1)
     infall_time = mass_name['infall_time'].values.reshape(-1, 1)
@@ -181,14 +181,25 @@ if __name__ == '__main__':
     training_theta = flattened_param_list[mask]
 
 
-    test_x = torch.log1p(torch.from_numpy(flattened_hist_list_test)).float()
+    # test_x = torch.log1p(torch.from_numpy(flattened_hist_list_test)).float()
+    # test_theta = torch.log10(torch.from_numpy(flattened_param_list_test)).float()
+
+    # x = torch.log1p(torch.from_numpy(training_x)).float()
+    # theta = torch.log10(torch.from_numpy(training_theta)).float()
+    
+    
+    test_x = torch.from_numpy(flattened_hist_list_test)
+    test_x[:, 0, :, :] = test_x[:, 0, :, :]/test_x[:, 0, :, :].sum()
+    # test_x = torch.log1p(test_x).float()
     test_theta = torch.log10(torch.from_numpy(flattened_param_list_test)).float()
 
-    x = torch.log1p(torch.from_numpy(training_x)).float()
+    x = torch.from_numpy(training_x)
+    x[:, 0, :, :] = x[:, 0, :, :]/x[:, 0, :, :].sum()
+    # x = torch.log1p(torch.from_numpy(training_x)).float()
     theta = torch.log10(torch.from_numpy(training_theta)).float()
     
     
-    gpu_index = 6  # replace with your desired GPU index
+    gpu_index = 1 # replace with your desired GPU index
     torch.cuda.set_device(gpu_index)
     device = f"cuda:{gpu_index}"
     conditions  = mass_name[['star_log10mass', 'infall_time']]
@@ -273,9 +284,13 @@ if __name__ == '__main__':
 
     # instantiate your neural networks to be used as an ensemble
     nets = [
-        ili.utils.load_nde_lampe(model='gf', hidden_features=50, num_transforms=5,
+        # ili.utils.load_nde_lampe(model='nsf', hidden_features=10, num_transforms=10,
+        #                     embedding_net=embedding_net, x_normalize=False, device=device),
+        ili.utils.load_nde_lampe(model='nsf', hidden_features=50, num_transforms=20,
                             embedding_net=embedding_net, x_normalize=False, device=device),
-        ili.utils.load_nde_lampe(model='gf', hidden_features=50, num_transforms=5,
+        # ili.utils.load_nde_lampe(model='nsf', hidden_features=100, num_transforms=20,
+        #                     embedding_net=embedding_net, x_normalize=False, device=device),
+        ili.utils.load_nde_lampe(model='gf', hidden_features=10, num_transforms=10,
                             embedding_net=embedding_net, x_normalize=False, device=device),
     ]
 
@@ -314,10 +329,10 @@ if __name__ == '__main__':
     cmap = cm.get_cmap('viridis')  # 'viridis' is the colormap name
 
     # Create a list of colors
-    colors = [cmap(i) for i in np.linspace(0, 1, 10)]  # Replace 10 with the number of colors you want
+    colors = [cmap(i) for i in np.linspace(0, 1, 20)]  # Replace 10 with the number of colors you want
 
-
-    for i in [i for i in range(10) if i%2==0]:
+    fig=plt.figure()
+    for i in [i for i in range(20) if i%2==0]:
         samples = posterior_ensemble.sample((5_000,), x=test_x[i].unsqueeze(0).to(device), show_progress_bars=True) 
         samples =  samples[:, 0].cpu().numpy()
         density = gaussian_kde(samples)
@@ -333,14 +348,15 @@ if __name__ == '__main__':
     
     
     metric = PosteriorCoverage(
-        num_samples=5_000, sample_method='direct',
+        num_samples=1_000, sample_method='direct',
         labels=[rf'$M_{{s}}\ [M_\odot]$', rf'$\tau [Gyr]$'], plot_list = ["coverage", "histogram", "predictions", "tarp"]
     )
     fig = metric(
         posterior=posterior_ensemble,
-        x=test_x.to(device), theta=test_theta.to(device))
+        x=test_x, theta=test_theta)
     
     fig[0].savefig('./coverage.png')
     fig[1].savefig('./predictions.png')
+    fig[2].savefig('./true_vs_predicted.png')
     fig[3].savefig('./tarp.png')
     

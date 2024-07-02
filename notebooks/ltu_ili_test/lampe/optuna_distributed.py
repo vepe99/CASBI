@@ -48,7 +48,7 @@ def objective(trial):
     # Suggest values for the hyperparameters
     model = trial.suggest_categorical('model', ['nsf', 'gf', 'maf'])
     hidden_features = trial.suggest_categorical('hidden_features', [10, 50, 70, 100])
-    num_transforms = trial.suggest_categorical('num_transforms', [5, 10, 15, 20])
+    num_transforms = trial.suggest_categorical('num_transforms', [10, 15, 20])
     output_dim = trial.suggest_categorical('output_dim', [10, 32, 64])
         
     prior = ili.utils.Uniform(low=minimum_theta, high=maximum_theta, device=device)
@@ -132,7 +132,7 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d):
             time_10 = infall_time[indices]
             mask =  (distances < d*analytic_10_samples).reshape(galaxy_10.shape)&(~np.isin(galaxy_10, samples))
             if (mask.sum() == 0):
-                if (((6*1e9-M_tot)/(6*1e9))<0.95):
+                if (((1.4*1e9-M_tot)/(1.4*1e9))<0.95):
                     # print(f'No halos satified the requirement, total mass is: {((6*1e9-M_tot)/(6*1e9))*100:.2f} %') #this is for studying rejection of not completed galaxy
                     samples = None
                     masses = None
@@ -158,7 +158,7 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.
     np.random.seed(j)
     N=2
     nbrs = NearestNeighbors(n_neighbors=N, algorithm='ball_tree').fit(mass_nn)
-    M_tot = 6 * 1e9
+    M_tot = 1.4 * 1e9
     samples = []
     masses =  []
     times = []
@@ -214,7 +214,7 @@ class CustomDataset(Dataset):
         
 if __name__ == '__main__':
     
-    gpu_index = 3  # replace with your desired GPU index
+    gpu_index = 1  # replace with your desired GPU index
     torch.cuda.set_device(gpu_index)
     device = f"cuda:{gpu_index}"
 
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     alpha = 1.25
    
     mass_name = data[['star_log10mass', 'Galaxy_name', 'infall_time']].drop_duplicates()
-    mass_name = mass_name[mass_name['star_log10mass']<6*1e9]
+    mass_name = mass_name[mass_name['star_log10mass']<1.4*1e9]
     min_feh, max_feh = data['feh'].min(), data['feh'].max() 
     min_ofe, max_ofe = data['ofe'].min(), data['ofe'].max()
     mass_nn = mass_name['star_log10mass'].values.reshape(-1, 1)
@@ -277,12 +277,12 @@ if __name__ == '__main__':
     training_theta = flattened_param_list[mask]
 
     test_x = torch.from_numpy(flattened_hist_list_test)
-    test_x[:, 0, :, :] = test_x[:, 0, :, :]/test_x[:, 0, :, :].sum()
+    # test_x[:, 0, :, :] = test_x[:, 0, :, :]/test_x[:, 0, :, :].sum()
     test_x = torch.log1p(test_x).float()
     test_theta = torch.log10(torch.from_numpy(flattened_param_list_test)).float()
 
     x = torch.from_numpy(training_x)
-    x[:, 0, :, :] = x[:, 0, :, :]/x[:, 0, :, :].sum()
+    # x[:, 0, :, :] = x[:, 0, :, :]/x[:, 0, :, :].sum()
     x = torch.log1p(torch.from_numpy(training_x)).float()
     theta = torch.log10(torch.from_numpy(training_theta)).float()
     
@@ -312,7 +312,7 @@ if __name__ == '__main__':
     
     
     study_name = 'example_study'  # Unique identifier of the study.
-    storage_name = 'sqlite:///example.db'
+    storage_name = 'sqlite:///example_onlylog.db'
     study = optuna.create_study(study_name=study_name, storage=storage_name,directions=['maximize', 'minimize'], load_if_exists=True)
     study = optuna.load_study(study_name=study_name, storage=storage_name)
     study.optimize(objective, callbacks=[MaxTrialsCallback(200, states=(TrialState.COMPLETE,))],)
