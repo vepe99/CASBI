@@ -9,3 +9,35 @@ unraveling the merging history. In the modern era of large N-body galaxy simulat
 properties of this building block, (e.g. total stellar mass, infall time, ...) using the chemical abundance plane as observables. We therefore present CASBI 
 (Chemical Abundance Simulation Based Inferece), a python package to recover the posterior probability of properties of building blocks of Milky Way 
 like galaxy's halo. Moreover, CASBI incorporate conditional neural network architectures as generator to obtain observables from parameters, smoothly interpolating on region of the parameters space that weren't fully covered during the N-body simulations.
+
+
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+\pgfplotsset{colormap={whitered}{color(0cm)=(white); color(1cm)=(orange!75!red)}}
+\usetikzlibrary{positioning, quotes}
+\usetikzlibrary{pgfplots.colorbrewer}
+
+\pgfplotsset{colormap/PuBuGn}
+\pgfplotsset{colormap/PuRd}
+
+
+\begin{tikzpicture}
+    \begin{axis}[
+        view={45}{60},
+        xlabel=$x$,
+        ylabel=$y$,
+        zlabel=$z$,
+        domain=0:5,
+        y domain=0:5,
+        samples=30
+    ]
+    \addplot3 [surf] {exp(-((x-2)^2 + (y-2)^2)/0.5) + exp(-((x-4)^2 + (y-4)^2)/0.2)};
+
+    % Marginal projections
+    % Projecting onto x-y plane (approximation)
+    \addplot3[name path=projXY1, domain=0:5, samples=50, samples y=0, smooth, thick, color=blue] (x, 5, {exp(-(x-2)^2/0.5) + exp(-(x-4)^2/0.2)});
+
+    % Projecting onto y-z plane (approximation)
+    \addplot3[name path=projYZ, domain=0:5, samples=50, samples y=0, smooth, thick,  color=green] (0, x, {exp(-(x-2)^2/0.5) + exp(-(x-4)^2/0.2)});
+    
+    \end{axis}
+\end{tikzpicture}
