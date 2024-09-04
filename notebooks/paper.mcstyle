@@ -5,7 +5,7 @@ figure.dpi: 200
 savefig.dpi: 200
 savefig.bbox: tight
 
-font.size: 14
+font.size: 18
 font.weight: 300
 
 

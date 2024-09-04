@@ -138,8 +138,8 @@ if __name__ == '__main__':
     infall_time = mass_name['infall_time'].values.reshape(-1, 1)
     galaxy_name = mass_name['Galaxy_name'].values.reshape(-1, 1)
     
-    test_set_sample = 100
-    train_set_sample = 5_000
+    test_set_sample = 1_000
+    train_set_sample = 10_000
 
     mass_nn = mass_name['star_log10mass'].values.reshape(-1, 1)
     infall_time = mass_name['infall_time'].values.reshape(-1, 1)
@@ -189,17 +189,17 @@ if __name__ == '__main__':
     
     
     test_x = torch.from_numpy(flattened_hist_list_test)
-    test_x[:, 0, :, :] = test_x[:, 0, :, :]/test_x[:, 0, :, :].sum()
-    # test_x = torch.log1p(test_x).float()
+    # test_x[:, 0, :, :] = test_x[:, 0, :, :]/test_x[:, 0, :, :].sum()
+    test_x = torch.log1p(test_x).float()
     test_theta = torch.log10(torch.from_numpy(flattened_param_list_test)).float()
 
     x = torch.from_numpy(training_x)
-    x[:, 0, :, :] = x[:, 0, :, :]/x[:, 0, :, :].sum()
-    # x = torch.log1p(torch.from_numpy(training_x)).float()
+    # x[:, 0, :, :] = x[:, 0, :, :]/x[:, 0, :, :].sum()
+    x = torch.log1p(torch.from_numpy(training_x)).float()
     theta = torch.log10(torch.from_numpy(training_theta)).float()
     
     
-    gpu_index = 1 # replace with your desired GPU index
+    gpu_index = 3 # replace with your desired GPU index
     torch.cuda.set_device(gpu_index)
     device = f"cuda:{gpu_index}"
     conditions  = mass_name[['star_log10mass', 'infall_time']]
@@ -286,11 +286,15 @@ if __name__ == '__main__':
     nets = [
         # ili.utils.load_nde_lampe(model='nsf', hidden_features=10, num_transforms=10,
         #                     embedding_net=embedding_net, x_normalize=False, device=device),
-        ili.utils.load_nde_lampe(model='nsf', hidden_features=50, num_transforms=20,
+        ili.utils.load_nde_lampe(model='nsf', hidden_features=100, num_transforms=20,
                             embedding_net=embedding_net, x_normalize=False, device=device),
-        # ili.utils.load_nde_lampe(model='nsf', hidden_features=100, num_transforms=20,
-        #                     embedding_net=embedding_net, x_normalize=False, device=device),
-        ili.utils.load_nde_lampe(model='gf', hidden_features=10, num_transforms=10,
+        ili.utils.load_nde_lampe(model='nsf', hidden_features=10, num_transforms=20,
+                            embedding_net=embedding_net, x_normalize=False, device=device),
+        ili.utils.load_nde_lampe(model='nsf', hidden_features=100, num_transforms=15,
+                            embedding_net=embedding_net, x_normalize=False, device=device),
+        ili.utils.load_nde_lampe(model='nsf', hidden_features=70, num_transforms=15,
+                            embedding_net=embedding_net, x_normalize=False, device=device),
+        ili.utils.load_nde_lampe(model='gf', hidden_features=100, num_transforms=15,
                             embedding_net=embedding_net, x_normalize=False, device=device),
     ]
 
