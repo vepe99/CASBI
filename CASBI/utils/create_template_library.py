@@ -7,18 +7,18 @@ from multiprocessing import Pool
 import numpy as np
 
 
-def pdf(m, alpha):
+def pdf(m, m_max, m_min, alpha):
         norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
         return (1/norm_const)* m**(-alpha)
-def cdf(m, alpha):
+def cdf(m, m_max, m_min, alpha):
     norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
     return (1/norm_const)* (1/(1-alpha)) * (m**(1-alpha) - m_min**(1-alpha))
 
-def inverse_cdf(y, alpha):
+def inverse_cdf(y, m_max, m_min, alpha):
     norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
     return (y*norm_const*(1-alpha) + m_min**(1-alpha))**(1/(1-alpha))
 
-def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d):
+def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, alpha, galaxy_name, mass_nn, infall_time, ):
     """
     Function to return the Galaxy name, mass and infall time obtain by sampling the mass function and then looking for Neighbors in the mass space.
     If the sample is too far away from the mass function, 5 new samples are drawn and we randomly select one of them, if they are enough close and not already in the sample list.
@@ -42,15 +42,15 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d):
     while iteration < 100: #number of max halos to be sampled
         if M_tot < mass_nn.min():
             break
-        max_u = cdf(M_tot, alpha)
-        analictical_sample = inverse_cdf(np.random.uniform(0, max_u), alpha, ).reshape(-1, 1)
+        max_u = cdf(M_tot, m_max, m_min, alpha)
+        analictical_sample = inverse_cdf(np.random.uniform(0, max_u), m_max, m_min, alpha, ).reshape(-1, 1)
         distances, indices = nbrs.kneighbors(analictical_sample)
         sample = galaxy_name[indices[0]][0][0]
         mass_sample = mass_nn[indices[0]][0][0]
         time_sample = infall_time[indices[0]][0][0]
         if (abs(mass_sample - analictical_sample) > d*analictical_sample) | (sample in samples):
             nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(mass_nn)
-            analytic_10_samples = inverse_cdf(np.random.uniform(0, 1, size=5), alpha, ).reshape(-1, 1)
+            analytic_10_samples = inverse_cdf(np.random.uniform(0, 1, size=5), m_max, m_min, alpha, ).reshape(-1, 1)
             distances, indices = nbrs.kneighbors(analytic_10_samples)
             galaxy_10 = galaxy_name[indices]
             mass_10 = mass_nn[indices]
@@ -79,7 +79,7 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d):
     return samples, masses, times
 
 
-def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.1, ):
+def gen_real_halo(j, galaxy_name, mass_nn, infall_time, m_max, m_min, galaxies_test=None, d=0.1,  alpha=1.25):
     """
     Generate a real halo by sampling the mass function and then looking for Neighbors in the mass space.
     Returns the histogram of the galaxy, the mass and the infall time of the galaxy.
@@ -107,7 +107,7 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.
     masses =  []
     times = []
     #generate a milky way galaxy like halo
-    samples, masses, times = gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d)
+    samples, masses, times = gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, alpha, galaxy_name, mass_nn, infall_time)
     
     #check if the milky way like halo is in the test set, otherwise genereate a new one untill is not present anymore in the test set
     if (galaxies_test is not None)&(samples is not None):
@@ -115,7 +115,7 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.
             samples = []
             masses =  []
             times = []
-            samples, masses, times = gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d)
+            samples, masses, times = gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d,m_max, m_min, alpha, galaxy_name, mass_nn, infall_time)
     if samples is None:
         return np.array([]), np.array([]), np.array([])
 
@@ -136,3 +136,10 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, galaxies_test=None, d=0.
     samples = samples[indices]
     
     return hist_to_return, np.column_stack([masses, infall_time]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
+
+
+def gen_template_library(test_set_sample, galaxy_name, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
+    with Pool(processes=cpu_count()) as p:
+        result = p.starmap(gen_real_halo, [[j, galaxy_name, mass_nn, infall_time, m_max, m_min,galaxy_test, d, alpha] for j in range(test_set_sample)]   )
+    return result
+    

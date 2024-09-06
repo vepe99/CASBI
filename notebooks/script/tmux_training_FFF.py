@@ -1,6 +1,6 @@
 # from CASBI.generator.fff.fff_model import *
 from CASBI.generator.fff.fff_model import FreeFormFlow
-from CASBI.utils.create_test_val_set import load_train_objs
+from CASBI.generator.create_test_val_set import load_train_objs
 
 import numpy as np
 import pandas as pd
