@@ -38,11 +38,12 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, 
     times: updated list of galaxy infall times
     
     """
+    M_temp = M_tot
     iteration = 0
     while iteration < 100: #number of max halos to be sampled
-        if M_tot < mass_nn.min():
+        if M_temp < mass_nn.min():
             break
-        max_u = cdf(M_tot, m_max, m_min, alpha)
+        max_u = cdf(M_temp, m_max, m_min, alpha)
         analictical_sample = inverse_cdf(np.random.uniform(0, max_u), m_max, m_min, alpha, ).reshape(-1, 1)
         distances, indices = nbrs.kneighbors(analictical_sample)
         sample = galaxy_name[indices[0]][0][0]
@@ -57,7 +58,7 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, 
             time_10 = infall_time[indices]
             mask =  (distances < d*analytic_10_samples).reshape(galaxy_10.shape)&(~np.isin(galaxy_10, samples))
             if (mask.sum() == 0):
-                if (((6*1e9-M_tot)/(6*1e9))<0.95):
+                if (((M_tot-M_temp)/(M_tot))<0.95):
                     # print(f'No halos satified the requirement, total mass is: {((6*1e9-M_tot)/(6*1e9))*100:.2f} %') #this is for studying rejection of not completed galaxy
                     samples = None
                     masses = None
@@ -74,12 +75,12 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, 
         masses.append(mass_sample)
         times.append(time_sample)
 
-        M_tot = M_tot - mass_sample
+        M_temp = M_temp - mass_sample
         iteration += 1 
     return samples, masses, times
 
 
-def gen_real_halo(j, galaxy_name, mass_nn, infall_time, m_max, m_min, galaxies_test=None, d=0.1,  alpha=1.25):
+def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxies_test=None, d=0.1,  alpha=1.25):
     """
     Generate a real halo by sampling the mass function and then looking for Neighbors in the mass space.
     Returns the histogram of the galaxy, the mass and the infall time of the galaxy.
@@ -102,7 +103,6 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, m_max, m_min, galaxies_t
     np.random.seed(j)
     N=2
     nbrs = NearestNeighbors(n_neighbors=N, algorithm='ball_tree').fit(mass_nn)
-    M_tot = 6 * 1e9
     samples = []
     masses =  []
     times = []
@@ -138,8 +138,48 @@ def gen_real_halo(j, galaxy_name, mass_nn, infall_time, m_max, m_min, galaxies_t
     return hist_to_return, np.column_stack([masses, infall_time]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
 
 
-def gen_template_library(test_set_sample, galaxy_name, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
+def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
     with Pool(processes=cpu_count()) as p:
-        result = p.starmap(gen_real_halo, [[j, galaxy_name, mass_nn, infall_time, m_max, m_min,galaxy_test, d, alpha] for j in range(test_set_sample)]   )
-    return result
+        if galaxy_test is not None:
+            #if the test set is provided, we generate the galaxy with a j index that starts from the length of the test set
+            result = p.starmap(gen_real_halo, [[j+len(galaxy_test), galaxy_name, M_tot,  mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
+        else:
+            result = p.starmap(gen_real_halo, [[j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
+            
+    hist_list, params_list, galaxy_list = zip(*result)
+
+    #create the filter to take only the unique galaxies 
+    single_galaxy = [arr[0] for arr in galaxy_list if arr.size > 0]
+    unique_indices = list({tuple(arr): i for i, arr in enumerate(map(tuple, single_galaxy))}.values())
+    
+    #print the number of unique galaxies in the training set
+    if galaxy_test is not None:
+        print('unique galaxy in the trainig set that are not empty:', len(unique_indices))
+    else:
+        print('unique galaxy in the test set that are not empty:', len(unique_indices))
+    
+        
+    flattened_hist_list = np.array([item for i, sublist in enumerate(hist_list) if i in unique_indices for item in sublist])
+    flattened_param_list = np.array([item for i, sublist in enumerate(params_list) if i in unique_indices for item in sublist])
+    galaxies_names = [set(arr[0]) for arr in galaxy_list if arr.size > 0] #list that contains set of names of the galaxy in the test set to compare it with the training set 
+
+    return flattened_hist_list, flattened_param_list, galaxies_names
+    
+    
+
+def template_input(data, M_tot):
+    data['star_log10mass'] = 10**data['star_log10mass']
+    data = data[data['star_log10mass']<M_tot]
+    mass_name = data[['star_log10mass', 'Galaxy_name', 'infall_time']].drop_duplicates()
+    
+    #cdf bounderies
+    m_min, m_max = mass_name['star_log10mass'].min(), mass_name['star_log10mass'].max()
+    
+    mass_nn = mass_name['star_log10mass'].values.reshape(-1, 1)
+    infall_time = mass_name['infall_time'].values.reshape(-1, 1)
+    galaxy_name = mass_name['Galaxy_name'].values.reshape(-1, 1)
+    
+    return galaxy_name, mass_nn, infall_time, m_max, m_min
+
+    
     
