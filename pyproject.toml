@@ -28,6 +28,7 @@ classifiers = [
 dependencies = [
     "click",
     "lightning == 2.2.4", 
+    "ltu-ili@git+https://github.com/maho3/ltu-ili",
     "FrEIA",
     "matplotlib >= 3.7.1",
     "numpy >= 1.26.4",

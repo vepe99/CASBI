@@ -31,6 +31,11 @@ from ili.validation import ValidationRunner
 
 from CASBI.utils.create_dataframe import rescale
 
+"""
+=========================================================
+Generate the galaxy halo for the 2 step inference process
+=========================================================
+"""
 def gen_onehalo(data, N_subhalos, train:bool, galaxies_test:np.array, min_feh, max_feh, min_ofe, max_ofe, ):
     """
     Function to genereate one halo for a given number of subhalos. If train=True, the function will check if each of the sets of subhalos is already present in the test set, and if so, it will generate a new set of subhalos.

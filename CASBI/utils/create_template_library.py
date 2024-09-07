@@ -8,13 +8,50 @@ import numpy as np
 
 
 def pdf(m, m_max, m_min, alpha):
-        norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
-        return (1/norm_const)* m**(-alpha)
+    """
+    Power law mass function
+    
+    Parameters:
+    m: mass of the galaxy
+    m_max: maximum mass of the galaxy
+    m_min: minimum mass of the galaxy
+    alpha: power law index of the mass function
+    
+    Returns:
+    pdf: power law mass function value at mass m
+    """
+    norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
+    return (1/norm_const)* m**(-alpha)
 def cdf(m, m_max, m_min, alpha):
+    """
+    Cumulative distribution function of the power law mass function
+    
+    Parameters:
+    m: mass of the galaxy
+    m_max: maximum mass of the galaxy
+    m_min: minimum mass of the galaxy
+    alpha: power law index of the mass function
+    
+    Returns:
+    cdf: cumulative distribution function value at mass m
+    """
+    
     norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
     return (1/norm_const)* (1/(1-alpha)) * (m**(1-alpha) - m_min**(1-alpha))
 
 def inverse_cdf(y, m_max, m_min, alpha):
+    """
+    Inverse cumulative distribution function of the power law mass function. It is used to sample analytically the mass function.
+    
+    Parameters:
+    y: random number between 0 and 1
+    m_max: maximum mass of the galaxy
+    m_min: minimum mass of the galaxy
+    alpha: power law index of the mass function
+    
+    Returns:
+    m: mass of the galaxy analytically sampled
+    """
     norm_const = (m_max**(1-alpha) - m_min**(1-alpha))/(1-alpha) 
     return (y*norm_const*(1-alpha) + m_min**(1-alpha))**(1/(1-alpha))
 
@@ -124,7 +161,7 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
     arr = np.array([np.load('/export/data/vgiusepp/data/full_dataframe/histogram_data/'+f'{s}'+'.npz' )['observables']  for s in samples ])
     #some all the histogram to obtain the 0th channel 
     hist_0 = np.sum( arr, axis=0)
-    hist_to_return = [np.stack([hist_0, np.ones_like(hist_0)*i, np.ones_like(hist_0)*j]) for i in range(samples.shape[0])]  #nasty trick to allow to save both the N_th number and the histogram in the same array
+    hist_to_return = [np.stack([np.log1p(hist_0), np.ones_like(hist_0)*i, np.ones_like(hist_0)*j]) for i in range(samples.shape[0])]  #nasty trick to allow to save both the N_th number and the histogram in the same array
     
     masses = np.array(masses)
     infall_time = np.array(infall_time)
@@ -135,10 +172,36 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
     infall_time = infall_time[indices]
     samples = samples[indices]
     
-    return hist_to_return, np.column_stack([masses, infall_time, np.ones_like(masses)*j]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
+    return hist_to_return, np.column_stack([np.log10(masses), np.log10(infall_time), np.arange(len(masses)), np.ones_like(masses)*j]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
 
 
 def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
+    """
+    Generate a template library of galaxies by sampling the mass function and then looking for Neighbors in the mass space. 
+    It returns the 2d histogram of the galaxies ('observables'), the mass and infall time of the galaxies ('parameters') and the list of subhalos name in the galaxies.
+    Both observables and parameters have been tagged with the j-th galaxy index and the i-th subhalo index.
+    If the test set is provided, it checks if the galaxy is already present in the test set, if so it generates a new one untill it is not present anymore.
+    The observables are 2d histograms with 3 channels, the first channel is the sum of all the subhalos, the second channel is the subhalo index and the third channel is the galaxy index.
+    The parameters are the mass, the infall, the subhalo index and the galaxy index.
+    
+    Parameters:
+    N_sample: number of galaxies to be generated
+    galaxy_name: list of galaxy names
+    mass_nn: list of galaxy masses
+    infall_time: list of galaxy infall times
+    m_max: maximum mass of the galaxy
+    m_min: minimum mass of the galaxy
+    alpha: power law index of the mass function
+    galaxy_test: list of set of galaxy names in the test set
+    d: percentale of the mass that the sample can be far away from the mass function
+    
+    Returns:
+    flattened_hist_list: 2d histogram of the galaxies
+    flattened_param_list: mass, infall time, subhalo index and galaxy index
+    galaxies_names: list of set of galaxy names in the test set
+    
+
+    """
     with Pool(processes=cpu_count()) as p:
         if galaxy_test is not None:
             #if the test set is provided, we generate the galaxy with a j index that starts from the length of the test set
@@ -168,6 +231,21 @@ def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_m
     
 
 def template_input(data, M_tot):
+    """
+    Filter the data to have only the galaxies with mass smaller than the total mass budget.
+    Generate the splitted input for the template library generation.
+    
+    Parameters:
+    data: dataframe with the galaxy data
+    M_tot: total mass budget for the galaxy halo
+    
+    Returns:
+    galaxy_name: list of galaxy names
+    mass_nn: list of galaxy masses
+    infall_time: list of galaxy infall times
+    m_max: maximum mass of the galaxy
+    m_min: minimum mass of the galaxy
+    """
     data['star_log10mass'] = 10**data['star_log10mass']
     data = data[data['star_log10mass']<M_tot]
     mass_name = data[['star_log10mass', 'Galaxy_name', 'infall_time']].drop_duplicates()

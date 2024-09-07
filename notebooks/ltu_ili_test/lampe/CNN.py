@@ -34,16 +34,18 @@ class ConvNet(nn.Module):
     def forward(self, x):
         if len(x.shape) == 3:
             x_0 = x[:1, :, :]
-            N = x[1:, 0, 0].reshape((1, 1))
-            
+            N = x[1:2, 0, 0].reshape((1, 1))
+        
             out = self.conv_layers(x_0)
             out = out.view(1, -1)
         else: 
             x_0 = x[:, :1, :, :] #the :1 keeps the channel dimension
-            N =  x[:, 1:, 0, 0]
+            N =  x[:, 1:2, 0, 0]
+            
             out = self.conv_layers(x_0)
             out = out.view(out.size(0), -1)
-        # print(out)
+        
+        
         # out = self.fc_layers(torch.cat((out, N), axis=1))
         out = self.fc_layer_1(torch.cat((out, N), axis=1))
         out = self.fc_layer_2(torch.cat((out, N), axis=1))
