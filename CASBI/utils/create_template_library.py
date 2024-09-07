@@ -124,7 +124,7 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
     arr = np.array([np.load('/export/data/vgiusepp/data/full_dataframe/histogram_data/'+f'{s}'+'.npz' )['observables']  for s in samples ])
     #some all the histogram to obtain the 0th channel 
     hist_0 = np.sum( arr, axis=0)
-    hist_to_return = [np.stack([hist_0, np.ones_like(hist_0)*i]) for i in range(samples.shape[0])]  #nasty trick to allow to save both the N_th number and the histogram in the same array
+    hist_to_return = [np.stack([hist_0, np.ones_like(hist_0)*i, np.ones_like(hist_0)*j]) for i in range(samples.shape[0])]  #nasty trick to allow to save both the N_th number and the histogram in the same array
     
     masses = np.array(masses)
     infall_time = np.array(infall_time)
@@ -135,7 +135,7 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
     infall_time = infall_time[indices]
     samples = samples[indices]
     
-    return hist_to_return, np.column_stack([masses, infall_time]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
+    return hist_to_return, np.column_stack([masses, infall_time, np.ones_like(masses)*j]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
 
 
 def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
