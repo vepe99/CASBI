@@ -167,6 +167,51 @@ def train_inference(x:torch.Tensor,
                     batch_size:int=1024,
                     learning_rate:float=0.00001,
                     stop_after_epochs:int=20):
+    """
+    Train a ltu-ili ensable model on (x, theta) couples. The training data is split into training and validation data. The model is saved in the output_dir directory.
+    
+    Parameters
+    ----------
+    x : torch.Tensor
+        The observation data.
+    theta : torch.Tensor
+        The parameter data.
+    validation_fraction : float, optional
+        The fraction of the data to use for validation, by default 0.2
+    output_dir : str, optional
+        The directory where the model is saved, by default './'
+    device : str, optional
+        The device to use, by default 'cuda'
+    N_nets : int, optional
+        The number of nets to ensable, by default 4
+    hidden_feature : int, optional
+        The number of hidden features of the model, by default 100
+    num_transforms : int, optional
+        The number of transforms of the model, by default 10
+    model : str, optional
+        The model to use, by default 'nsf'
+    embedding_net : str, optional
+        The embedding network to use, by default 'CNN'. The CNN.py file should be in the same directory as the training script.
+    output_dim : int, optional
+        The output dimension of the embedding network, by default 32
+    minimum_theta : list, optional
+        The minimum value of the theta parameters, by default [3.5, -2.]
+    maximum_theta : list, optional
+        The maximum value of the theta parameters, by default [10, 1.15]
+    batch_size : int, optional
+        The batch size, by default 1024
+    learning_rate : float, optional 
+        The learning rate, by default 0.00001
+    stop_after_epochs : int, optional
+        The number of epochs to train, by default 20
+        
+    Returns
+    -------
+    posterior_ensemble : ili.posterior.PosteriorEnsemble
+        The posterior ensemble model.
+    summaries : dict
+        The summaries of the training process.
+    """
     
     #traing arguments
     train_args = {
