@@ -6,6 +6,7 @@ from multiprocessing import cpu_count
 from multiprocessing import Pool
 import numpy as np
 
+import os
 
 def pdf(m, m_max, m_min, alpha):
     """
@@ -117,13 +118,14 @@ def gen_non_repeated_halo(samples, masses, times, M_tot, nbrs, d, m_max, m_min, 
     return samples, masses, times
 
 
-def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxies_test=None, d=0.1,  alpha=1.25):
+def gen_real_halo(hist_file_path, j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxies_test=None, d=0.1,  alpha=1.25):
     """
     Generate a real halo by sampling the mass function and then looking for Neighbors in the mass space.
     Returns the histogram of the galaxy, the mass and the infall time of the galaxy.
     If the test set is provided, it checks if the galaxy is already present in the test set, if so it generates a new one untill it is not present anymore.
     
     Parameters:
+    hist_file_path: path to the histogram file
     j: index of the galaxy to be generated
     galaxy_name: list of galaxy names
     mass_nn: list of galaxy masses
@@ -158,7 +160,7 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
 
     #get the galaxy name to load the histogram from memory 
     samples =  np.array(samples)
-    arr = np.array([np.load('/export/data/vgiusepp/data/full_dataframe/histogram_data/'+f'{s}'+'.npz' )['observables']  for s in samples ])
+    arr = np.array([np.load(hist_file_path+f'{s}'+'.npz' )['observables']  for s in samples ])
     #some all the histogram to obtain the 0th channel 
     hist_0 = np.sum( arr, axis=0)
     hist_to_return = [np.stack([np.log1p(hist_0), np.ones_like(hist_0)*i, np.ones_like(hist_0)*j]) for i in range(samples.shape[0])]  #nasty trick to allow to save both the N_th number and the histogram in the same array
@@ -175,7 +177,7 @@ def gen_real_halo(j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, gal
     return hist_to_return, np.column_stack([np.log10(masses), np.log10(infall_time), np.arange(len(masses)), np.ones_like(masses)*j]), np.array([samples for i in range(samples.shape[0])]) # I want for each of the hist to have all the names of the galaxies that contributed to it, I cannot flatten it 
 
 
-def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
+def gen_template_library(hist_file_path, N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, alpha, galaxy_test=None, d=0.1):
     """
     Generate a template library of galaxies by sampling the mass function and then looking for Neighbors in the mass space. 
     It returns the 2d histogram of the galaxies ('observables'), the mass and infall time of the galaxies ('parameters') and the list of subhalos name in the galaxies.
@@ -185,6 +187,7 @@ def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_m
     The parameters are the mass, the infall, the subhalo index and the galaxy index.
     
     Parameters:
+    hist_file_path: path to the histogram file
     N_sample: number of galaxies to be generated
     galaxy_name: list of galaxy names
     mass_nn: list of galaxy masses
@@ -205,9 +208,9 @@ def gen_template_library(N_sample, galaxy_name, M_tot, mass_nn, infall_time, m_m
     with Pool(processes=cpu_count()) as p:
         if galaxy_test is not None:
             #if the test set is provided, we generate the galaxy with a j index that starts from the length of the test set
-            result = p.starmap(gen_real_halo, [[j+len(galaxy_test), galaxy_name, M_tot,  mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
+            result = p.starmap(gen_real_halo, [[hist_file_path, j+len(galaxy_test), galaxy_name, M_tot,  mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
         else:
-            result = p.starmap(gen_real_halo, [[j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
+            result = p.starmap(gen_real_halo, [[hist_file_path, j, galaxy_name, M_tot, mass_nn, infall_time, m_max, m_min, galaxy_test, d, alpha] for j in range(N_sample)]   )
             
     hist_list, params_list, galaxy_list = zip(*result)
 
