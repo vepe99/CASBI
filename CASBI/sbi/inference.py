@@ -25,7 +25,7 @@ import ili
 from ili.dataloaders import NumpyLoader, TorchLoader
 from ili.inference import InferenceRunner
 from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
-from CNN import ConvNet
+from CASBI.sbi.CNN import ConvNet
 
 """
 ==========
@@ -233,6 +233,13 @@ def train_inference(x:torch.Tensor,
         out_dir=output_dir,
     )
     
+    # Assert if the data are PyTorch tensors
+    if not torch.is_tensor(x):
+        x = torch.tensor(x)
+    if not torch.is_tensor(theta):
+        theta = torch.tensor(theta)
+    
+    
     #split validataion and training data
     data_size = len(x)
     print(data_size)    
@@ -261,7 +268,13 @@ def train_inference(x:torch.Tensor,
 
 
 def plot_test_posterior(posterior_ensemble, n_samples, test_x, test_theta, galaxy_index, subhalo_index_list, my_width, my_height, device='cuda'):
-
+    
+    # Assert if the data are PyTorch tensors
+    if not torch.is_tensor(test_x):
+        test_x = torch.tensor(test_x)
+    if not torch.is_tensor(test_theta):
+        test_theta = torch.tensor(test_theta)
+    
     cmap = cm.get_cmap('viridis')
     
     # Create a list of colors
