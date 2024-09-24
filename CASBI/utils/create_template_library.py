@@ -282,6 +282,8 @@ class TemplateLibrary():
         self.bins = bins
         self.galaxy_array_path = galaxy_array_path
         self.dataframe = pd.read_parquet(dataframe_path)[['star_log10mass', 'Galaxy_name', 'infall_time']].drop_duplicates()
+        self.galaxy_names_to_remove = ['g6.31e09.01024', 'g6.31e09.00832', 'g6.31e09.00704', 'g6.31e09.00768', 'g6.31e09.00960', 'g6.31e09.00896']
+        self.dataframe = self.dataframe[~self.dataframe['Galaxy_name'].isin(self.galaxy_names_to_remove)]
         self.dataframe['star_log10mass'] = 10**self.dataframe['star_log10mass']
         self.dataframe = self.dataframe[self.dataframe['star_log10mass'] < M_tot]
         

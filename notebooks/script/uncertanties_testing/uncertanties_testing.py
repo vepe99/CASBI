@@ -56,7 +56,7 @@ def run_with_retry(num_samples):
 if __name__ == "__main__":
     galaxy_array_path = '/export/data/vgiusepp/data/full_dataframe/galaxy_array/'
     dataframe_path = '/export/data/vgiusepp/data/full_dataframe/dataframe/dataframe.parquet'
-    for sigma in tqdm([0.5, 0.8]):
+    for sigma in tqdm([0.0, 0.01, 0.02, 0.04, 0.5, 0.8]):
         template_library = TemplateLibrary(galaxy_array_path=galaxy_array_path, dataframe_path=dataframe_path, sigma=sigma)    
         template_library.gen_libary(N_test=100, N_train=1000)
         

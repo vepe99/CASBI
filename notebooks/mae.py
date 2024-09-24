@@ -33,14 +33,17 @@ def process_dictionary(samples, sigma, data_dict, num_samples):
         sample_i_j = {}
         sampled_theta = posterior_dict[m].sample((num_samples, ), x=torch.tensor(x_with_channels))[:, 0] 
         sample_i_j[(i, j)] = sampled_theta
-        samples[sigma].update(sample_i_j)
-
+        if sigma in samples.keys():
+            samples[sigma].update(sample_i_j)
+        else:
+            samples[sigma] = sample_i_j
 
 def run_with_retry(samples,sigma, data_dict, num_samples):
     while True:
         try:
             process_dictionary(samples, sigma, data_dict, num_samples)
-            break  # Exit the loop if no exception is raised
+            num_samples = 1001
+            break  # Exit the loop if no exception is raised 
         except Exception as e:
             print(f"Error encountered: {e}. Retrying with num_samples={num_samples + 1}")
             num_samples += 1
