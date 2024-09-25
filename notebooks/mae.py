@@ -51,7 +51,7 @@ def run_with_retry(samples,sigma, data_dict, num_samples):
 
 
 samples = {}
-for sigma in tqdm([0.0, 0.01, 0.02, 0.04, 0.5, 0.8]):
+for sigma in tqdm([0.0, 0.01, 0.02, 0.04, 0.06, 0.13]):
     with open(f'./script/uncertanties_testing/test_set/test_set_{sigma}.pkl', 'rb') as pickle_file:
         data_dict = pickle.load(pickle_file)
     posterior_dict = {}
