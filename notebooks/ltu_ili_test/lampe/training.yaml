@@ -1,31 +1,63 @@
+backend: lampe
 device: cuda
-embedding_net:
-  args:
-    output_dim: 10
-  class: ConvNet
-  module: CNN
-model:
-  backend: lampe
-  engine: NPE
-  name: toy_NPE
-  nets:
-  - hidden_features: 70
-    model: gf
-    num_transforms: 5
-    signature: m1
+engine: NPE
+nets:
+- !!python/name:ili.utils.ndes_pt.net_constructor ''
+- !!python/name:ili.utils.ndes_pt.net_constructor ''
+- !!python/name:ili.utils.ndes_pt.net_constructor ''
+- !!python/name:ili.utils.ndes_pt.net_constructor ''
 out_dir: ./
-prior:
-  args:
-    high:
-    - 9.778040286463124
-    - 1.1407118802345704
-    low:
-    - 4.4.711969898733544
-    - -0.34796754710159744
-  class: Uniform
-  module: ili.utils
+prior: !!set
+  ? !!python/object:ili.utils.distributions_pt.IndependentUniform
+    _batch_shape: !!python/object/apply:torch.Size
+    - !!python/tuple []
+    _event_shape: !!python/object/apply:torch.Size
+    - !!python/tuple
+      - 2
+    base_dist: &id001 !!python/object:torch.distributions.uniform.Uniform
+      _batch_shape: !!python/object/apply:torch.Size
+      - !!python/tuple
+        - 2
+      _event_shape: !!python/object/apply:torch.Size
+      - !!python/tuple []
+      high: !!python/object/apply:torch._utils._rebuild_tensor_v2
+      - !!python/object/apply:torch.storage._load_from_bytes
+        - !!binary |
+          gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+          AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+          aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+          Z2UKcQFYDgAAADk0ODE3Mjc5NjAzNjQ4cQJYBgAAAGN1ZGE6NnEDSwJOdHEEUS6AAl1xAFgOAAAA
+          OTQ4MTcyNzk2MDM2NDhxAWEuAgAAAAAAAAAAACBBMzOTPw==
+      - 0
+      - !!python/tuple
+        - 2
+      - !!python/tuple
+        - 1
+      - false
+      - !!python/object/apply:collections.OrderedDict
+        - []
+      low: !!python/object/apply:torch._utils._rebuild_tensor_v2
+      - !!python/object/apply:torch.storage._load_from_bytes
+        - !!binary |
+          gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+          AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+          aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+          Z2UKcQFYDgAAADk0ODE3Mjc5NTc1OTg0cQJYBgAAAGN1ZGE6NnEDSwJOdHEEUS6AAl1xAFgOAAAA
+          OTQ4MTcyNzk1NzU5ODRxAWEuAgAAAAAAAAAAAGBAAAAAwA==
+      - 0
+      - !!python/tuple
+        - 2
+      - !!python/tuple
+        - 1
+      - false
+      - !!python/object/apply:collections.OrderedDict
+        - []
+    device: cuda
+    dist: *id001
+    reinterpreted_batch_ndims: 1
+  : null
+proposal: null
 train_args:
   learning_rate: 1.0e-05
   stop_after_epochs: 20
   training_batch_size: 1024
-  validation_fraction: 0.1

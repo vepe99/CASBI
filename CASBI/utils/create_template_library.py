@@ -331,6 +331,7 @@ class TemplateLibrary():
         
         norm_const = (self.m_max**(1-self.alpha) - self.m_min**(1-self.alpha))/(1-self.alpha) 
         return (1/norm_const)* (1/(1-self.alpha)) * (m**(1-self.alpha) - self.m_min**(1-self.alpha))
+        # return (m_max**(1-self.alpha) - m**(1-self.alpha)) / (m_min**(1-self.alpha) - m_max**(1-self.alpha))
 
     def inverse_cdf(self, y, m_max, m_min, alpha):
         """
@@ -344,9 +345,15 @@ class TemplateLibrary():
         
         Returns:
         m: mass of the galaxy analytically sampled
-        """
+        # """
         norm_const = (self.m_max**(1-self.alpha) - self.m_min**(1-self.alpha))/(1-self.alpha) 
         return (y*norm_const*(1-self.alpha) + self.m_min**(1-self.alpha))**(1/(1-self.alpha))
+        # Generate uniform random numbers
+        
+        # Inverse CDF formula to sample masses
+        # samples = (m_min**(1-self.alpha) - y * (m_min**(1-self.alpha) - m_max**(1-self.alpha)))**(1/(1-self.alpha))
+        
+        # return samples
     
     def gen_subhalo_sample(self, samples, masses, times, nbrs):
         """

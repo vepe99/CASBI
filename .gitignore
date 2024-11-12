@@ -162,3 +162,9 @@ events.out.tfevents.*
 
 #ltu-ili 
 *.pkl
+
+#pdf
+*.pdf
+
+#summary
+*.json
