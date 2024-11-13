@@ -2,7 +2,12 @@ import numpy as np
 import re 
 import pynbody as pb
 from multiprocessing import Pool
+import logging
+import sys
+import os
 
+# Configure logging to suppress messages from pynbody
+logging.getLogger('pynbody').setLevel(logging.CRITICAL)
 
 """
 ===========================================================================
@@ -47,6 +52,10 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
     regex = r'[^/]+$'
     name_file = re.search(regex, sim_path).group()
     
+    # Redirect stderr to suppress error messages
+    original_stderr = sys.stderr
+    sys.stderr = open(os.devnull, 'w')
+    
     try:
         #check if the file can be loaded
         sim = pb.load(sim_path)
@@ -90,7 +99,11 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
                                     Galaxy_name=name_file,    
                                     )
                 else:
-                    print('Not formed stars yet')        
+                    print('Not formed stars yet')      
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = original_stderr  
 
 
 def gen_files(sim_path: str, file_path: str) -> None:
