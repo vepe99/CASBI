@@ -57,28 +57,28 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         try:
             #check if the halos can be loaded
             h = sim.halos()
-            h_1 = h[1]
+            h_0 = h[0]
         except:
             print(f'Halo error {name_file}')
             np.savez(file=file_path + name_file + '_halos_error.npz', emppty=np.array([0]))
         else:
             try: 
-                mass = h_1.s['mass']
+                mass = h_0.s['mass']
             except:
                 print('Dummy halos')
                 np.savez(file=file_path + name_file + '_dummy_error.npz', emppty=np.array([0]))           
             else:
                 #check if the simualtion has formed stars
-                if len(h_1.s['mass']) > 0:
+                if len(h_0.s['mass']) > 0:
                     
                     file_name = file_path + name_file + '.npz'
                     #PARAMETERS
-                    star_mass = np.array(h_1.s['mass'].sum()) #in Msol
-                    infall_time = np.array(h_1.properties['time'].in_units('Gyr'))
+                    star_mass = np.array(h_0.s['mass'].sum()) #in Msol
+                    infall_time = np.array(h_0.properties['time'].in_units('Gyr'))
                     try:
                         #check if the [Fe/H] and [O/Fe] can be extracted
-                        feh = h_1.s['feh']
-                        ofe = h_1.s['ofe']
+                        feh = h_0.s['feh']
+                        ofe = h_0.s['ofe']
                     except:
                         np.savez(file=file_path + name_file + '_FeO_error.npz', emppty=np.array([0]))
                     else:
