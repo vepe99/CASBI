@@ -22,5 +22,5 @@ Indices and tables
    :maxdepth: 2
    :caption: Notebooks
 
-   ../notebooks/preprocessing.ipynb
+   notebooks/preprocessing.ipynb
 
