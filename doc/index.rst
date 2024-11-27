@@ -18,9 +18,9 @@ Indices and tables
 * :ref:`search`
 
 .. toctree::
-:hidden:
-:maxdepth: 2
-:caption: Notebooks
+   :hidden:
+   :maxdepth: 2
+   :caption: Notebooks
 
-../notebooks/preprocessing.ipynb
+   ../notebooks/preprocessing.ipynb
 
