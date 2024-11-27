@@ -13,7 +13,7 @@ from ili.validation.metrics import PosteriorSamples
 import tarp
 from CNN import ConvNet
 
-from CASBI.sbi.inference import CustomDataset
+from CASBI.inference import CustomDataset
 from CASBI.utils import create_template_libary as ctl
 
 ##OPTUNA DISTRIBUTED MULTI OBJECTIVE OPTIMIZATION STUDY

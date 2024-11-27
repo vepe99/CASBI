@@ -1,10 +1,13 @@
 import numpy as np
-import re 
+import pandas as pd
 import pynbody as pb
+
 from multiprocessing import Pool
 import logging
 import sys
 import os
+import re 
+from tqdm import tqdm
 
 # Configure logging to suppress messages from pynbody
 logging.getLogger('pynbody').setLevel(logging.CRITICAL)
@@ -61,35 +64,35 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         sim = pb.load(sim_path)
         sim.physical_units()
     except:
-        np.savez(file=file_path + name_file + '_load_error.npz', emppty=np.array([0]))
+        np.savez(file=os.path.join(file_path, name_file+'_load_error.npz'), emppty=np.array([0]))
     else:
         try:
             #check if the halos can be loaded
             h = sim.halos()
-            h_0 = h[0]
+            h_1 = h[1]
         except:
             print(f'Halo error {name_file}')
             np.savez(file=file_path + name_file + '_halos_error.npz', emppty=np.array([0]))
         else:
             try: 
-                mass = h_0.s['mass']
+                mass = h_1.s['mass']
             except:
                 print('Dummy halos')
-                np.savez(file=file_path + name_file + '_dummy_error.npz', emppty=np.array([0]))           
+                np.savez(file=os.path.join(file_path, name_file+'_dummy_error.npz'), emppty=np.array([0]))           
             else:
                 #check if the simualtion has formed stars
-                if len(h_0.s['mass']) > 0:
+                if len(h_1.s['mass']) > 0:
                     
                     file_name = file_path + name_file + '.npz'
                     #PARAMETERS
-                    star_mass = np.array(h_0.s['mass'].sum()) #in Msol
-                    infall_time = np.array(h_0.properties['time'].in_units('Gyr'))
+                    star_mass = np.array(h_1.s['mass'].sum()) #in Msol
+                    infall_time = np.array(h_1.properties['time'].in_units('Gyr'))
                     try:
                         #check if the [Fe/H] and [O/Fe] can be extracted
-                        feh = h_0.s['feh']
-                        ofe = h_0.s['ofe']
+                        feh = h_1.s['feh']
+                        ofe = h_1.s['ofe']
                     except:
-                        np.savez(file=file_path + name_file + '_FeO_error.npz', emppty=np.array([0]))
+                        np.savez(file=os.path.join(file_path, name_file+'_FeO_error.npz'), emppty=np.array([0]))
                     else:
                         np.savez(file=file_name, 
                                     feh=feh, 
@@ -126,3 +129,116 @@ def gen_files(sim_path: str, file_path: str) -> None:
     pool = Pool(processes=200)
     pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
     
+"""
+===========================================================================
+GENERATION DATAFRAME
+===========================================================================
+The dataframe with information on parameters and observables for all the galaxy available in the simulation.
+The preprocess is used to cut numerical errors and outliers (especially in the chemical plane)
+"""
+
+
+def preprocess(file_dir:str,  preprocess_dir:str) -> None:
+    """
+    Save the necessary files to preprocess the data for the training set. It savez aggregated information of Galaxy Mass, Number of stars, [Fe/H] and [O/Fe] in the preprocess_dir.
+    so that percentile cut can be computed in gen_dataframe funciton
+    
+    Parameters
+    ----------
+    file_dir : str
+        Path to the folder where the files with the parameters and observables are saved.
+    preprocess_dir : str
+        Path to the folder where the preprocess information will be saved.
+        
+    Returns
+    -------
+    preprocess_file_path: str
+        Path to the file with the preprocess information.
+    
+    """
+    Galaxy_Mass = []
+    Galaxy_infall_time = []
+    FeH = []
+    OFe = []
+    
+    for galaxy in tqdm(os.listdir(file_dir)):
+        if not("error" in galaxy): 
+            path = os.path.join(file_dir,galaxy) 
+            mass = np.load(path)['star_mass']
+            time = np.load(path)['infall_time']
+            Galaxy_Mass.append(float(mass))    
+            Galaxy_infall_time.append(float(time))
+            
+            #we need a general pictures of the entire distribution of [Fe/H] and [O/Fe] to cut the outliers
+            feh = np.load(path)['feh']
+            ofe = np.load(path)['ofe']
+            for f, o in zip(feh, ofe):
+                FeH.append(f)    
+                OFe.append(o)
+            
+    Galaxy_Mass = np.array(Galaxy_Mass)
+    Galaxy_infall_time = np.array(Galaxy_infall_time)
+    np.savez(file=os.path.join(preprocess_dir, 'preprocess_file'), Galaxy_Mass=Galaxy_Mass, Galaxy_infall_time=Galaxy_infall_time, FeH=FeH, OFe=OFe)
+    return f'{preprocess_dir}preprocess_file.npz'
+
+
+def load_data(file_path):
+    """
+    Load the data from the file_path and return a pandas dataframe with the data. This function is then distributed in CASBI.preprocessing.gen_dataframe function
+    
+    Parameters
+    ----------
+    file_path : str
+        Path to the file with the parameters and observables.
+
+    Returns
+    -------
+    df_temp : pandas.DataFrame
+        The dataframe with the data from the file_path.
+    """
+    properties = ['star_mass', 'infall_time', 'Galaxy_name', 'max_feh', 'max_ofe']
+    data = [np.load(file_path)[prop].item() for prop in properties[:3]]
+    #get the maximum of feh and ofe
+    data.append(np.load(file_path)['feh'].max())
+    data.append(np.load(file_path)['ofe'].max())
+
+    df_temp = pd.DataFrame(columns = properties)
+    df_temp.loc[0] = data
+
+    return df_temp
+
+def gen_dataframe(file_dir: str, dataframe_path: str) -> None:
+    """
+    Genereate the dataframe used for the sampling process in the CASBI.template_library class
+    
+    Parameters
+    ----------
+    file_dir : str
+        Path to the folder where the files with the parameters and observables are saved.
+    
+    dataframe_path : str
+        Path to the folder where the dataframe will be saved
+    
+    Returns
+    -------
+    df : pandas.DataFrame
+        The dataframe with the data from the file_dir.
+    """
+    
+    #access all the file created by preprocessing.gen_files
+    all_files = sorted(os.listdir(file_dir))
+    regex = r'^(?!.*error)'
+    file_path = [os.path.join(file_dir,path) for path in all_files if re.search(regex, path)]
+    
+    #distributed the data access
+    with Pool(processes=100) as pool:
+        df_list = pool.map(load_data, file_path)
+    
+    #concatenate the dataframes
+    df = pd.concat(df_list, ignore_index=True)
+    
+    #save the dataframe
+    df.to_parquet(os.path.join(dataframe_path, 'dataframe.parquet'))
+
+    return df 
+

@@ -17,7 +17,7 @@ import ili
 from CASBI.utils.create_dataframe import rescale
 from CASBI.sbi.conf_yaml import generate_data_yaml, generate_training_yaml
 from CASBI.sbi.gen_halo import  gen_halo_Nsubhalos, gen_halo
-from CASBI.sbi.inference import run_inference, load_posterior, infer_observation, evaluate_posterior, calibrarion
+from CASBI.inference import run_inference, load_posterior, infer_observation, evaluate_posterior, calibrarion
 
 import torch.nn as nn
 

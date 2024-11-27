@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 mpl.style.use('../../paper.mcstyle')
@@ -17,7 +16,7 @@ from ili.validation.metrics import PosteriorCoverage
 from tqdm import tqdm
 import torch
 import pickle
-import CASBI.sbi.inference as inference
+import CASBI.inference as inference
 from CASBI.utils.create_template_library import TemplateLibrary
 
 gpu_index = 6  # replace with your desired GPU index

@@ -193,18 +193,18 @@ def preprocess_setup(file_dir:str,  preprocess_dir:str) -> None:
     return f'{preprocess_dir}preprocess_file.npz'
 
 
-def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file_path:str, perc_star=10, perc_feh=0.1, perc_ofe=0.1) -> None:
+def gen_dataframe(file_dir: str, dataframe_path: str, preprocess_file_path:str, mass_cut = 6*1e9, perc_star=10, perc_feh=0.1, perc_ofe=0.1) -> None:
     min_n_star = np.percentile(np.load(preprocess_file_path)['Number_Star'], perc_star)
     min_feh    = np.percentile(np.load(preprocess_file_path)['FeH'], perc_feh)
     min_ofe    = np.percentile(np.load(preprocess_file_path)['OFe'], perc_ofe) 
-    mass_cat = 6*1e9
-     
+    
+
     all_files = sorted(os.listdir(file_dir))
     regex = r'^(?!.*error)'
     file_path = [file_dir+path for path in all_files if re.search(regex, path)]
     
     pool = Pool(processes=100)
-    items = zip(file_path, [mass_cat]*len(file_path), [min_n_star]*len(file_path), [min_feh]*len(file_path), [min_ofe]*len(file_path))
+    items = zip(file_path, [mass_cut]*len(file_path), [min_n_star]*len(file_path), [min_feh]*len(file_path), [min_ofe]*len(file_path))
     df_list = pool.starmap(load_data, items)
     df = pd.concat(df_list, ignore_index=True)
     
