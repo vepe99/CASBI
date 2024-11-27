@@ -23,8 +23,8 @@ author = 'Giuseppe Viterbo at <a href="https://astroai-lab.de/index.html">AstroA
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # "sphinx.ext.napoleon",
-    # "nbsphinx",
+    "sphinx.ext.napoleon",
+    "nbsphinx",
     "myst_nb",
     "nbsphinx_link",
     "sphinx_mdinclude",

@@ -29,6 +29,19 @@ Having done so, the test suite can be run using `pytest`:
 python -m pytest
 ```
 
+## Notebooks
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+:caption: Notebooks
+
+notebooks/simple_example.ipynb
+notebooks/conservational_properties.ipynb
+notebooks/gradients_through_stellar_wind.ipynb
+notebooks/wind_parameter_optimization.ipynb
+```
+
 ## Acknowledgments
 
 This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).
