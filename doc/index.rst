@@ -18,7 +18,6 @@ Indices and tables
 * :ref:`search`
 
 .. toctree::
-   :hidden:
    :maxdepth: 2
    :caption: Notebooks
 
