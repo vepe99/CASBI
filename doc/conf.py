@@ -15,7 +15,7 @@
 
 project = 'CASBI'
 copyright = '2024, vepe99'
-author = 'vepe99'
+author = 'Giuseppe Viterbo at <a href="https://astroai-lab.de/index.html">AstroAi Lab</a>.'
 
 # -- General configuration ---------------------------------------------------
 
@@ -24,7 +24,8 @@ author = 'vepe99'
 # ones.
 extensions = [
     # "sphinx.ext.napoleon",
-    "nbsphinx",
+    # "nbsphinx",
+    "myst_nb",
     "nbsphinx_link",
     "sphinx_mdinclude",
     "sphinx.ext.autodoc",
