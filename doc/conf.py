@@ -24,7 +24,7 @@ author = 'Giuseppe Viterbo at <a href="https://astroai-lab.de/index.html">AstroA
 # ones.
 extensions = [
     "sphinx.ext.napoleon",
-    "nbsphinx",
+    # "nbsphinx",
     "myst_nb",
     "nbsphinx_link",
     "sphinx_mdinclude",

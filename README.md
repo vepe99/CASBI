@@ -36,10 +36,7 @@ python -m pytest
 :maxdepth: 2
 :caption: Notebooks
 
-notebooks/simple_example.ipynb
-notebooks/conservational_properties.ipynb
-notebooks/gradients_through_stellar_wind.ipynb
-notebooks/wind_parameter_optimization.ipynb
+notebooks/preprocessing.ipynb
 ```
 
 ## Acknowledgments
