@@ -5,3 +5,5 @@ CASBI
    :maxdepth: 4
 
    CASBI
+   setup
+   tests
