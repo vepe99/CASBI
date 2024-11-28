@@ -27,7 +27,6 @@ extensions = [
 
     # enable google style docstrings
     # 'sphinx.ext.napoleon',
-    # 'nbsphinx',
 
     # myst parser with notebook support
     'myst_nb',
@@ -52,8 +51,8 @@ autodoc2_packages = [
     "../../CASBI",
 ]
 
-autodoc2_hidden_objects = ["inherited", "private"]
-autodoc2_module_summary = False
+# autodoc2_hidden_objects = ["inherited", "private"]
+# autodoc2_module_summary = False
 
 myst_amsmath_enable = True
 myst_enable_extensions = [
