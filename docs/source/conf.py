@@ -26,7 +26,8 @@ extensions = [
     # 'sphinxcontrib.apidoc',
 
     # enable google style docstrings
-    'sphinx.ext.napoleon',
+    # 'sphinx.ext.napoleon',
+    # 'nbsphinx',
 
     # myst parser with notebook support
     'myst_nb',
