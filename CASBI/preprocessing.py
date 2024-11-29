@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pynbody as pb
 
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Pool, cpu_count
 import logging
 import sys
 import os
@@ -18,6 +19,8 @@ GENERATION OF THE FILEs OF OBSERVATIONS AND PARAMETERS FOR THE TRAINING SET
 ===========================================================================
 Functions to extract the parameters and observables from the simulation snapshots and save them in .npz files.
 """
+
+
 def extract_parameter_array(sim_path='str', file_path='str') -> None:
     """
     Extract the parameters and observables from the path. Checks all the possible errors and if one is found it is saved as an 'error_file'.  
@@ -59,11 +62,14 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
     original_stderr = sys.stderr
     sys.stderr = open(os.devnull, 'w')
     
+    error_dataframe = pd.DataFrame(columns=['Galaxy_name', 'error'])
+    
     try:
         #check if the file can be loaded
         sim = pb.load(sim_path)
         sim.physical_units()
     except:
+        error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'load'}, ignore_index=True)
         np.savez(file=os.path.join(file_path, name_file+'_load_error.npz'), emppty=np.array([0]))
     else:
         try:
@@ -71,14 +77,14 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
             h = sim.halos()
             h_1 = h[1]
         except:
-            print(f'Halo error {name_file}')
+            error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'halos'}, ignore_index=True)
             np.savez(file=file_path + name_file + '_halos_error.npz', emppty=np.array([0]))
         else:
             try: 
                 mass = h_1.s['mass']
             except:
-                print('Dummy halos')
-                np.savez(file=os.path.join(file_path, name_file+'_dummy_error.npz'), emppty=np.array([0]))           
+                error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'mass'}, ignore_index=True)
+                np.savez(file=os.path.join(file_path, name_file+'_mass_error.npz'), emppty=np.array([0]))           
             else:
                 #check if the simualtion has formed stars
                 if len(h_1.s['mass']) > 0:
@@ -92,6 +98,7 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
                         feh = h_1.s['feh']
                         ofe = h_1.s['ofe']
                     except:
+                        error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'chemical'}, ignore_index=True)
                         np.savez(file=os.path.join(file_path, name_file+'_FeO_error.npz'), emppty=np.array([0]))
                     else:
                         np.savez(file=file_name, 
@@ -102,18 +109,21 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
                                     Galaxy_name=name_file,    
                                     )
                 else:
+                    error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'no_stars'}, ignore_index=True)
                     print('Not formed stars yet')      
     finally:
         # Restore stderr
         sys.stderr.close()
         sys.stderr = original_stderr  
+    
+    return error_dataframe
 
 
 def gen_files(sim_path: str, file_path: str) -> None:
     """
     Generate the parameter and observable files for all the given paths, and save them in the 2 separate folders for parameters and observables.
     It is suggested to use the glob library to get all the paths of the snapshots in the simulation like: path = glob.glob('storage/g?.??e??/g?.??e??.0????') 
-
+    Saves also a dataframe with the errors that occurred during the extraction of the parameters and observables, in the same directory as the files.
     Parameters
     ----------
     sim_path : str
@@ -125,9 +135,12 @@ def gen_files(sim_path: str, file_path: str) -> None:
     -------
     None
     
-    """                       
-    pool = Pool(processes=200)
-    pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
+    """
+    with Pool(processes=cpu_count()) as pool:                       
+        df_list = pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
+    
+    error_dataframe = pd.concat(df_list, ignore_index=True)
+    error_dataframe.to_parquet(os.path.join(file_path, 'error_dataframe.parquet'))
     
 """
 ===========================================================================
@@ -140,7 +153,7 @@ The preprocess is used to cut numerical errors and outliers (especially in the c
 
 def preprocess(file_dir:str,  preprocess_dir:str) -> None:
     """
-    Save the necessary files to preprocess the data for the training set. It savez aggregated information of Galaxy Mass, Number of stars, [Fe/H] and [O/Fe] in the preprocess_dir.
+    Save the necessary files to preprocess the data for the training set. It saves aggregated information of Galaxy Mass, Number of stars, [Fe/H] and [O/Fe] in the preprocess_dir.
     so that percentile cut can be computed in gen_dataframe funciton
     
     Parameters

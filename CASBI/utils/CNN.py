@@ -1,8 +1,15 @@
 import torch
 import torch.nn as nn
 
+"""
+
+Utils function for the embedding network. In our case we adopt a Convolutional Neural Network (CNN) to extract the features from the image-like input, 
+the chemical abundance histograms.
+"""
+
 
 class ConvNet(nn.Module):
+    
     
     def __init__(self, output_dim):
         super(ConvNet, self).__init__()
