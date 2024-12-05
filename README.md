@@ -34,21 +34,16 @@ Having done so, the test suite can be run using `pytest`:
 python -m pytest
 ```
 
-## Notebooks
 
-```{toctree}
-:hidden:
-:maxdepth: 2
-:caption: Notebooks
 
-notebooks/preprocessing.ipynb
-```
+## Acknowledgments
+
+This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).
+
+
+## Cite
 
 >how to cite this code:
 >if you find this code useful for your analyses, please cite the associated paper, as well as:
 >
 >-NeurIPS paper: [https://arxiv.org/abs/2411.17269](https://arxiv.org/abs/2411.17269)
-
-## Acknowledgments
-
-This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).
