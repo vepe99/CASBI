@@ -1,8 +1,13 @@
 # Welcome to CASBI (Chemical Abundance Simulation Based Inference)
 
+ [![arXiv](https://img.shields.io/badge/arXiv-2107.07405-b31b1b.svg)](https://arxiv.org/abs/2411.17269)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://readthedocs.org/projects/casbi/badge/?version=latest)](https://casbi.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/vepe99/CASBI/branch/main/graph/badge.svg)](https://codecov.io/gh/vepe99/CASBI)
+
+![CASBI Complete](./notebooks/CASBI_complete.png)
+
+
 
 ## Installation
 
@@ -38,6 +43,11 @@ python -m pytest
 
 notebooks/preprocessing.ipynb
 ```
+
+>how to cite this code:
+>if you find this code useful for your analyses, please cite the associated paper, as well as:
+>
+>-NeurIPS paper: [https://arxiv.org/abs/2411.17269](https://arxiv.org/abs/2411.17269)
 
 ## Acknowledgments
 

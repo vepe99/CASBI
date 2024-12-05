@@ -124,19 +124,20 @@ def gen_files(sim_path: str, file_path: str) -> None:
     Generate the parameter and observable files for all the given paths, and save them in the 2 separate folders for parameters and observables.
     It is suggested to use the glob library to get all the paths of the snapshots in the simulation like: path = glob.glob('storage/g?.??e??/g?.??e??.0????') 
     Saves also a dataframe with the errors that occurred during the extraction of the parameters and observables, in the same directory as the files.
+
     Parameters
     ----------
     sim_path : str
         Path to the simulation snapshots. The path should end with 'simulation_name.snapshot_number' and it is used to create the name of the .npz files.
     file_path : str
         Path to the folder where the files will be saved.
-    
+
     Returns
     -------
     None
-    
-    """
-    with Pool(processes=cpu_count()) as pool:                       
+
+        """
+    with Pool() as pool:                       
         df_list = pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
     
     error_dataframe = pd.concat(df_list, ignore_index=True)
