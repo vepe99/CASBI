@@ -36,6 +36,33 @@ on a single test set object and a function to evaluate on the whole test set. Lt
 we provide the function to create the yaml file.
 
 """
+
+class CustomDataset(Dataset):
+    """
+    Custom dataset class for the training and validation datasets.
+    
+    Parameters
+    ----------
+    observation : torch.Tensor
+        The observation data.
+    parameters : torch.Tensor
+        The parameter data.
+    """
+    def __init__(self, observation, parameters, ):
+        self.observation = observation
+        self.parameters = parameters
+        
+        self.tensors = [self.observation, self.parameters]
+
+    def __len__(self):
+        return len(self.observation)
+
+    def __getitem__(self, idx):
+        observation = self.observation[idx].to('cuda') #this should put just the batch on the gpu
+        parameters = self.parameters[idx, :2].to('cuda') #when training we are not interested in the galaxy and subhalo index
+
+        return observation, parameters
+
    
 def train_inference(x:torch.Tensor, 
                     theta:torch.Tensor,

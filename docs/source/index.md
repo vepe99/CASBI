@@ -33,6 +33,8 @@ self
 :caption: Notebooks
 
 notebooks/preprocessing.ipynb
+notebooks/template_library_and_inference.ipynb
+notebooks/uncertainty_testing_results.ipynb
 ```
 
 ```{toctree}

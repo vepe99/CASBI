@@ -41,15 +41,15 @@ class ConvNet(nn.Module):
     def forward(self, x):
         if len(x.shape) == 3:
             x_0 = x[:1, :, :]
-            N = x[1:2, 0, 0].reshape((1, 1))
+            N = x[1:2, 0, 0].reshape((1, 1)).to('cuda')
         
-            out = self.conv_layers(x_0)
+            out = self.conv_layers(x_0.to('cuda'))
             out = out.view(1, -1)
         else: 
             x_0 = x[:, :1, :, :] #the :1 keeps the channel dimension
-            N =  x[:, 1:2, 0, 0]
+            N =  x[:, 1:2, 0, 0].to('cuda')
             
-            out = self.conv_layers(x_0)
+            out = self.conv_layers(x_0.to('cuda'))
             out = out.view(out.size(0), -1)
         
         
