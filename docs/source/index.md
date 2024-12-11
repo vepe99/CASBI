@@ -2,7 +2,7 @@
 
 `CASBI` is a simulation based inference package to perform bayesian inference in the context of Galactic Archaeology.
 
-
+![CASBI Complete](../../notebooks/CASBI_complete.png)
 
 ::::
 
@@ -17,7 +17,7 @@ pip install CASBI
 ```
 
 
-:::{tip} Get started with this [simple example]().
+:::{tip} The inference pipeline and the evaluation metric are presented in [simple example](notebooks/preprocessing.ipynb).
 
 ```{toctree}
 :hidden:
@@ -34,7 +34,6 @@ self
 
 notebooks/preprocessing.ipynb
 notebooks/template_library_and_inference.ipynb
-notebooks/uncertainty_testing_results.ipynb
 ```
 
 ```{toctree}
