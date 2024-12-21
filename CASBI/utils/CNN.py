@@ -8,11 +8,12 @@ the chemical abundance histograms.
 """
 
 
-class ConvNet(nn.Module):
-    
-    
+class ConvNet_halo(nn.Module):
+    """
+    This class defines the CNN architecture for the embedding network. The CNN is used to extract the features from the chemical abundance histograms of entire galaxy halos.
+    """   
     def __init__(self, output_dim):
-        super(ConvNet, self).__init__()
+        super(ConvNet_halo, self).__init__()
         self.ones = torch.ones(10).float().to('cuda')
         self.conv_layers = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
@@ -24,13 +25,6 @@ class ConvNet(nn.Module):
             nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.fc_layers = nn.Sequential(
-            nn.Linear(32 * 8 * 8 +1, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128)
         )
         
         self.fc_layer_1 = nn.Sequential(nn.Linear(32*8*8+1, 256), nn.ReLU())   
@@ -60,3 +54,43 @@ class ConvNet(nn.Module):
         out = self.fc_layer_4(torch.cat((out, N), axis=1))
         
         return torch.cat((out, N), axis=1)
+    
+class ConvNet_subhalo(nn.Module):
+    """
+    This class defines the CNN architecture for the embedding network. The CNN is used to extract the features from the chemical abundance histograms of single dwarf galaxy subhalos.
+    """   
+    def __init__(self, output_dim):
+        super(ConvNet_subhalo, self).__init__()
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+        self.fc_layers = nn.Sequential(
+            nn.Linear(32 * 8 * 8, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, output_dim)
+        )
+        
+
+    def forward(self, x):
+        if len(x.shape) == 3:
+            x = x[:1, :, :]
+            out = self.conv_layers(x.to('cuda'))
+            out = out.view(1, -1)
+            out = self.fc_layers(out)
+            
+        else: 
+            x = x[:, :1, :, :]
+            out = self.conv_layers(x.to('cuda'))
+            out = out.view(out.size(0), -1)
+            out = self.fc_layers(out)
+        return out

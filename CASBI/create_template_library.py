@@ -10,6 +10,9 @@ import os
 import time
 import torch
 
+from sklearn.model_selection import train_test_split
+
+
     
 class TemplateLibrary():
     """
@@ -317,4 +320,38 @@ class TemplateLibrary():
         self.params_test = torch.tensor(self.params_test)
         return self.x_train, self.params_train, self.x_test, self.params_test
    
-    
+    def create_single_halo_library(self, test_percentage):
+        """
+        Create a template library with a single halo
+        """
+        #path to the galaxy array in the samples
+        # all_galaxy_path = os.listdir(self.galaxy_file_path)
+        
+        # #let's remove the bad galaxies and all the error
+        # words_to_remove = self.galaxy_names_to_remove
+        # words_to_remove.append('error')
+        # path = [os.path.join(self.galaxy_file_path, galaxy_name) for galaxy_name in all_galaxy_path if not any(word in galaxy_name for word in words_to_remove)]
+        
+        dwarf_galaxy = self.dataframe['Galaxy_name'][self.dataframe['star_mass']<self.M_tot].values
+        path = [os.path.join(self.galaxy_file_path, galaxy_name+'.npz') for galaxy_name in dwarf_galaxy]
+        
+        #load the feh and ofe of the samples and also mass weights to be able to sum the histograms
+        feh = [np.load(path_to_galaxy)['feh'][(np.load(path_to_galaxy)['feh']>self.feh_cut)&(np.load(path_to_galaxy)['ofe']>self.ofe_cut)] for path_to_galaxy in path ]
+        ofe = [np.load(path_to_galaxy)['ofe'][(np.load(path_to_galaxy)['feh']>self.feh_cut)&(np.load(path_to_galaxy)['ofe']>self.ofe_cut)] for path_to_galaxy in path ]
+        
+        
+                
+        #get the observation
+        x = np.array([np.histogram2d(feh[i], ofe[i], bins=self.bins, range=[self.feh_lim, self.ofe_lim])[0] for i in range(len(feh))])
+        
+        #get the parameters
+        param_m  = np.array([np.log10(np.load(path_to_galaxy)['star_mass']) for path_to_galaxy in path])
+        param_tau = np.array([np.log10(np.load(path_to_galaxy)['infall_time']) for path_to_galaxy in path])
+        params = np.column_stack([param_m, param_tau])
+        
+
+        self.x_train, self.x_test, self.params_train, self.params_test = train_test_split(x, params, test_size=test_percentage, random_state=42)
+        
+        
+        
+        

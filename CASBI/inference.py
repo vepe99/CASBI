@@ -25,7 +25,7 @@ import ili
 from ili.dataloaders import NumpyLoader, TorchLoader
 from ili.inference import InferenceRunner
 from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
-from CASBI.utils.CNN import ConvNet
+from CASBI.utils.CNN import ConvNet_halo, ConvNet_subhalo
 
 """
 ==========
@@ -37,7 +37,7 @@ we provide the function to create the yaml file.
 
 """
 
-class CustomDataset(Dataset):
+class CustomDataset_halo(Dataset):
     """
     Custom dataset class for the training and validation datasets.
     
@@ -62,6 +62,32 @@ class CustomDataset(Dataset):
         parameters = self.parameters[idx, :2].to('cuda') #when training we are not interested in the galaxy and subhalo index
 
         return observation, parameters
+    
+class CustomDataset_subhalo(Dataset):
+    """
+    Custom dataset class for the training and validation datasets.
+    
+    Parameters
+    ----------
+    observation : torch.Tensor
+        The observation data.
+    parameters : torch.Tensor
+        The parameter data.
+    """
+    def __init__(self, observation, parameters, ):
+        self.observation = observation
+        self.parameters = parameters
+        
+        self.tensors = [self.observation, self.parameters]
+
+    def __len__(self):
+        return len(self.observation)
+
+    def __getitem__(self, idx):
+        observation = self.observation[idx].to('cuda') #this should put just the batch on the gpu
+        parameters = self.parameters[idx].to('cuda') #when training we are not interested in the galaxy and subhalo index
+
+        return observation, parameters
 
    
 def train_inference(x:torch.Tensor, 
@@ -73,10 +99,11 @@ def train_inference(x:torch.Tensor,
                     hidden_feature:int=100, 
                     num_transforms:int=20, 
                     model:str='nsf', 
-                    embedding_net:str = ConvNet(output_dim=32), 
+                    embedding_net:str = ConvNet_halo(output_dim=32),
+                    custom_dataset: torch.utils.data.Dataset = CustomDataset_halo,
                     minimum_theta:list=[3.5, -2.],
                     maximum_theta:list=[10, 1.15],
-                    batch_size:int=1024,
+                    batch_size:int=2048,
                     learning_rate:float=0.00001,
                     stop_after_epochs:int=20):
     """
@@ -168,8 +195,8 @@ def train_inference(x:torch.Tensor,
     val_data, val_targets = x[val_indices].float(), theta[val_indices].float(),
 
     # Now you can create your DataLoaders
-    train_loader = torch.utils.data.DataLoader(CustomDataset(train_data.to(device), train_targets.to(device),), shuffle=True, batch_size=2024)
-    val_loader = torch.utils.data.DataLoader(CustomDataset(val_data.to(device), val_targets.to(device),), shuffle=False, batch_size=2024)
+    train_loader = torch.utils.data.DataLoader(custom_dataset(train_data.to(device), train_targets.to(device),), shuffle=True, batch_size=batch_size)
+    val_loader = torch.utils.data.DataLoader(custom_dataset(val_data.to(device), val_targets.to(device),), shuffle=False, batch_size=batch_size)
     # test_loader = DataLoader(test_dataset,  shuffle=False)
 
     loader = TorchLoader(train_loader=train_loader, val_loader=val_loader)
