@@ -26,6 +26,8 @@ from ili.dataloaders import NumpyLoader, TorchLoader
 from ili.inference import InferenceRunner
 from ili.validation.metrics import PosteriorCoverage, PlotSinglePosterior
 from CASBI.utils.CNN import ConvNet_halo, ConvNet_subhalo
+from sklearn.model_selection import train_test_split
+
 
 """
 ==========
@@ -101,11 +103,14 @@ def train_inference(x:torch.Tensor,
                     model:str='nsf', 
                     embedding_net:str = ConvNet_halo(output_dim=32),
                     custom_dataset: torch.utils.data.Dataset = CustomDataset_halo,
+                    custom_dataloader: torch.utils.data.DataLoader = torch.utils.data.DataLoader,
                     minimum_theta:list=[3.5, -2.],
                     maximum_theta:list=[10, 1.15],
                     batch_size:int=2048,
                     learning_rate:float=0.00001,
-                    stop_after_epochs:int=20):
+                    stop_after_epochs:int=20,
+                    norm_x = False,
+                    norm_theta = True,):
     """
     Train a ltu-ili ensable model on (x, theta) couples. The training data is split into training and validation data. The model is saved in the output_dir directory.
     
@@ -160,18 +165,23 @@ def train_inference(x:torch.Tensor,
     }
     
     #ensable model
+    
     runner = InferenceRunner.load(
         backend ='lampe',
         engine ='NPE',
         prior = ili.utils.Uniform(low=minimum_theta, high=maximum_theta, device=device),
-        nets = [ili.utils.load_nde_lampe(model=model, hidden_features=hidden_feature, num_transforms=num_transforms,
-                    embedding_net=embedding_net.to(device), x_normalize=False, device=device) for j in range(N_nets)],
+        nets = [ili.utils.load_nde_lampe(model=model, 
+                                         hidden_features=hidden_feature, 
+                                         num_transforms=num_transforms,
+                                         embedding_net=embedding_net.to(device), 
+                                         x_normalize=norm_x, 
+                                         theta_normalize=norm_theta,
+                                         device=device) for j in range(N_nets)],
         device=device,
         train_args=train_args,
         proposal=None,
         out_dir=output_dir,
     )
-    
     # Assert if the data are PyTorch tensors
     if not torch.is_tensor(x):
         x = torch.tensor(x)
@@ -180,24 +190,11 @@ def train_inference(x:torch.Tensor,
     
     
     #split validataion and training data
-    data_size = len(x)
-    print(data_size)    
-    indices = np.random.permutation(data_size)
-
-    # Decide on the split size, for example 80% for training and 20% for validation
-    split_idx = int(data_size * (1-validation_fraction))
-
-    # Split the indices
-    train_indices, val_indices = indices[:split_idx], indices[split_idx:]
-
-    # Create the data splits
-    train_data, train_targets = x[train_indices].float(), theta[train_indices].float()
-    val_data, val_targets = x[val_indices].float(), theta[val_indices].float(),
+    train_data, val_data, train_targets, val_targets = train_test_split(x, theta, test_size=validation_fraction, random_state=42)
 
     # Now you can create your DataLoaders
-    train_loader = torch.utils.data.DataLoader(custom_dataset(train_data.to(device), train_targets.to(device),), shuffle=True, batch_size=batch_size)
-    val_loader = torch.utils.data.DataLoader(custom_dataset(val_data.to(device), val_targets.to(device),), shuffle=False, batch_size=batch_size)
-    # test_loader = DataLoader(test_dataset,  shuffle=False)
+    train_loader = custom_dataloader(custom_dataset(train_data, train_targets,), shuffle=True, batch_size=batch_size, )
+    val_loader = custom_dataloader(custom_dataset(val_data, val_targets,), shuffle=False, batch_size=batch_size, )
 
     loader = TorchLoader(train_loader=train_loader, val_loader=val_loader)
     
