@@ -14,7 +14,7 @@ class ConvNet_halo(nn.Module):
     """   
     def __init__(self, output_dim):
         super(ConvNet_halo, self).__init__()
-        self.ones = torch.ones(10).float().to('cuda')
+        # self.ones = torch.ones(10).float().to(self.device)
         self.conv_layers = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
@@ -32,18 +32,21 @@ class ConvNet_halo(nn.Module):
         self.fc_layer_3 = nn.Sequential(nn.Linear(128+1, 64), nn.ReLU())
         self.fc_layer_4 = nn.Linear(64+1, output_dim)
 
+    def set_device (self, device):
+        self.device = device
+        
     def forward(self, x):
         if len(x.shape) == 3:
             x_0 = x[:1, :, :]
-            N = x[1:2, 0, 0].reshape((1, 1)).to('cuda')
+            N = x[1:2, 0, 0].reshape((1, 1)).to(self.device)
         
-            out = self.conv_layers(x_0.to('cuda'))
+            out = self.conv_layers(x_0.to(self.device))
             out = out.view(1, -1)
         else: 
             x_0 = x[:, :1, :, :] #the :1 keeps the channel dimension
-            N =  x[:, 1:2, 0, 0].to('cuda')
+            N =  x[:, 1:2, 0, 0].to(self.device)
             
-            out = self.conv_layers(x_0.to('cuda'))
+            out = self.conv_layers(x_0.to(self.device))
             out = out.view(out.size(0), -1)
         
         
@@ -80,17 +83,23 @@ class ConvNet_subhalo(nn.Module):
             nn.Linear(256, output_dim)
         )
         
+    def set_device (self, device):
+        self.device = device
 
     def forward(self, x):
         if len(x.shape) == 3:
             x = x[:1, :, :]
-            out = self.conv_layers(x.to('cuda'))
+            # self.conv_layers = self.conv_layers.to(self.device)
+            out = self.conv_layers(x.to(self.device))
             out = out.view(1, -1)
+            self.fc_layers = self.fc_layers.to(self.device)
             out = self.fc_layers(out)
             
         else: 
             x = x[:, :1, :, :]
-            out = self.conv_layers(x.to('cuda'))
+            # self.conv_layers = self.conv_layers.to(self.device)
+            out = self.conv_layers(x.to(self.device))
             out = out.view(out.size(0), -1)
+            self.fc_layers = self.fc_layers.to(self.device)
             out = self.fc_layers(out)
         return out

@@ -50,9 +50,10 @@ class CustomDataset_halo(Dataset):
     parameters : torch.Tensor
         The parameter data.
     """
-    def __init__(self, observation, parameters, ):
+    def __init__(self, observation, parameters, device):
         self.observation = observation
         self.parameters = parameters
+        self.device = device    
         
         self.tensors = [self.observation, self.parameters]
 
@@ -60,12 +61,12 @@ class CustomDataset_halo(Dataset):
         return len(self.observation)
 
     def __getitem__(self, idx):
-        observation = self.observation[idx].to('cuda') #this should put just the batch on the gpu
-        parameters = self.parameters[idx, :2].to('cuda') #when training we are not interested in the galaxy and subhalo index
+        observation = self.observation[idx].to(self.device) #this should put just the batch on the gpu
+        parameters = self.parameters[idx, :2].to(self.device) #when training we are not interested in the galaxy and subhalo index
 
         return observation, parameters
     
-class CustomDataset_subhalo(Dataset):
+class CustomDataset_subhalo(Dataset, ):
     """
     Custom dataset class for the training and validation datasets.
     
@@ -76,9 +77,10 @@ class CustomDataset_subhalo(Dataset):
     parameters : torch.Tensor
         The parameter data.
     """
-    def __init__(self, observation, parameters, ):
+    def __init__(self, observation, parameters, device):
         self.observation = observation
         self.parameters = parameters
+        self.device = device
         
         self.tensors = [self.observation, self.parameters]
 
@@ -86,8 +88,8 @@ class CustomDataset_subhalo(Dataset):
         return len(self.observation)
 
     def __getitem__(self, idx):
-        observation = self.observation[idx].to('cuda') #this should put just the batch on the gpu
-        parameters = self.parameters[idx].to('cuda') #when training we are not interested in the galaxy and subhalo index
+        observation = self.observation[idx].to(self.device ) #this should put just the batch on the gpu
+        parameters = self.parameters[idx].to(self.device ) #when training we are not interested in the galaxy and subhalo index
 
         return observation, parameters
 
@@ -164,8 +166,10 @@ def train_inference(x:torch.Tensor,
     'stop_after_epochs': stop_after_epochs,
     }
     
-    #ensable model
+    #embedding network device
+    embedding_net.set_device(device)
     
+    #ensable model
     runner = InferenceRunner.load(
         backend ='lampe',
         engine ='NPE',
@@ -191,10 +195,11 @@ def train_inference(x:torch.Tensor,
     
     #split validataion and training data
     train_data, val_data, train_targets, val_targets = train_test_split(x, theta, test_size=validation_fraction, random_state=42)
+    
 
     # Now you can create your DataLoaders
-    train_loader = custom_dataloader(custom_dataset(train_data, train_targets,), shuffle=True, batch_size=batch_size, )
-    val_loader = custom_dataloader(custom_dataset(val_data, val_targets,), shuffle=False, batch_size=batch_size, )
+    train_loader = custom_dataloader(custom_dataset(train_data, train_targets, device=device), shuffle=True, batch_size=batch_size, )
+    val_loader = custom_dataloader(custom_dataset(val_data, val_targets, device=device), shuffle=False, batch_size=batch_size, )
 
     loader = TorchLoader(train_loader=train_loader, val_loader=val_loader)
     

@@ -320,7 +320,7 @@ class TemplateLibrary():
         self.params_test = torch.tensor(self.params_test)
         return self.x_train, self.params_train, self.x_test, self.params_test
    
-    def create_single_halo_library(self, test_percentage):
+    def create_single_halo_library(self, test_percentage, random_state=43):
         """
         Create a template library with a single halo
         """
@@ -350,7 +350,7 @@ class TemplateLibrary():
         params = np.column_stack([param_m, param_tau])
         
 
-        self.x_train, self.x_test, self.params_train, self.params_test = train_test_split(x, params, test_size=test_percentage, random_state=42)
+        self.x_train, self.x_test, self.params_train, self.params_test = train_test_split(x, params, test_size=test_percentage, random_state=43)
         
         
         

@@ -46,6 +46,7 @@ dependencies = [
     "sbibm",
     "tensorboard >= 2.16.2",
     "torch > 2.2.2",
+    "torchvision",
     "tqdm >= 4.65.0",
     "ytree >= 3.2.1",
 ]
