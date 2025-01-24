@@ -66,3 +66,8 @@ API
       :canonical: CASBI.create_template_library.TemplateLibrary.get_inference_input
 
       .. autodoc2-docstring:: CASBI.create_template_library.TemplateLibrary.get_inference_input
+
+   .. py:method:: create_single_halo_library(test_percentage, random_state=43)
+      :canonical: CASBI.create_template_library.TemplateLibrary.create_single_halo_library
+
+      .. autodoc2-docstring:: CASBI.create_template_library.TemplateLibrary.create_single_halo_library

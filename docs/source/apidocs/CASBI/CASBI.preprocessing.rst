@@ -35,12 +35,12 @@ Functions
 API
 ~~~
 
-.. py:function:: extract_parameter_array(sim_path='str', file_path='str') -> None
+.. py:function:: extract_parameter_array(sim_path='str', file_path='str', position_flag=False) -> None
    :canonical: CASBI.preprocessing.extract_parameter_array
 
    .. autodoc2-docstring:: CASBI.preprocessing.extract_parameter_array
 
-.. py:function:: gen_files(sim_path: str, file_path: str) -> None
+.. py:function:: gen_files(sim_path: str, file_path: str, position_flag=False) -> None
    :canonical: CASBI.preprocessing.gen_files
 
    .. autodoc2-docstring:: CASBI.preprocessing.gen_files

@@ -23,9 +23,9 @@ Submodules
    :maxdepth: 1
 
    CASBI.__main__
+   CASBI.preprocessing
    CASBI.create_template_library
    CASBI.inference
-   CASBI.preprocessing
 
 Package Contents
 ----------------

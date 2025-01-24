@@ -21,7 +21,7 @@ Functions to extract the parameters and observables from the simulation snapshot
 """
 
 
-def extract_parameter_array(sim_path='str', file_path='str') -> None:
+def extract_parameter_array(sim_path='str', file_path='str', position_flag=False) -> None:
     """
     Extract the parameters and observables from the path. Checks all the possible errors and if one is found it is saved as an 'error_file'.  
     If no stars were formed in the snapshot, the function dosen't save any file. Two .npz files are returned, one with the parameters and another with the observables.
@@ -35,7 +35,8 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         Path to the simulation snapshot. The path should end with 'simulation_name.snapshot_number' and it is used to create the name of the .npz files.
     file_path : str
         Path to the folder where the file will be saved. The file is a .npz file with parameters and observables stored in it.
-
+    position_flag : bool
+        flag to save the positions of the stars in the snapshot. Default is False.
     Returns
     -------
     file : .npz array
@@ -45,6 +46,8 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         Total mass of the formed stars in the snapshot
         file['infall_time'] : float
         Time at which the snapshot was taken in Gyr
+        file['position'] : array
+        Array with the positions of the formed stars in the snapshot
         
         The observables are:   
         file['feh'] : np.array
@@ -69,26 +72,31 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
         sim = pb.load(sim_path)
         sim.physical_units()
     except:
-        error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'load'}, ignore_index=True)
+        error_dataframe.loc[len(error_dataframe)] = {'Galaxy_name': name_file, 'error': 'load'}
         np.savez(file=os.path.join(file_path, name_file+'_load_error.npz'), emppty=np.array([0]))
     else:
         try:
             #check if the halos can be loaded
             h = sim.halos()
             h_1 = h[1]
+            
+            pb.analysis.angmom.faceon(h_1)
+            
         except:
-            error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'halos'}, ignore_index=True)
+            error_dataframe.loc[len(error_dataframe)] = {'Galaxy_name': name_file, 'error': 'halos'}
             np.savez(file=file_path + name_file + '_halos_error.npz', emppty=np.array([0]))
+            print('halo error')
         else:
             try: 
                 mass = h_1.s['mass']
             except:
-                error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'mass'}, ignore_index=True)
-                np.savez(file=os.path.join(file_path, name_file+'_mass_error.npz'), emppty=np.array([0]))           
+                error_dataframe.loc[len(error_dataframe)] = {'Galaxy_name': name_file, 'error': 'mass'}
+                np.savez(file=os.path.join(file_path, name_file+'_mass_error.npz'), emppty=np.array([0]))  
+                print('mass error')         
             else:
                 #check if the simualtion has formed stars
                 if len(h_1.s['mass']) > 0:
-                    
+        
                     file_name = file_path + name_file + '.npz'
                     #PARAMETERS
                     star_mass = np.array(h_1.s['mass'].sum()) #in Msol
@@ -98,18 +106,30 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
                         feh = h_1.s['feh']
                         ofe = h_1.s['ofe']
                     except:
-                        error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'chemical'}, ignore_index=True)
+                        error_dataframe.loc[len(error_dataframe)] = {'Galaxy_name': name_file, 'error': 'chemical'}
                         np.savez(file=os.path.join(file_path, name_file+'_FeO_error.npz'), emppty=np.array([0]))
+                        print('chemistry error')  
                     else:
-                        np.savez(file=file_name, 
-                                    feh=feh, 
-                                    ofe=ofe,
-                                    star_mass=star_mass, 
-                                    infall_time=infall_time, 
-                                    Galaxy_name=name_file,    
-                                    )
+                        if position_flag == False:
+                            np.savez(file=file_name, 
+                                        feh=feh, 
+                                        ofe=ofe,
+                                        star_mass=star_mass, 
+                                        infall_time=infall_time, 
+                                        Galaxy_name=name_file,    
+                                        )
+                        else:
+                            position = np.array(h_1.s['pos'].in_units('kpc'))
+                            np.savez(file=file_name,
+                                     feh=feh,
+                                     ofe=ofe,
+                                     star_mass=star_mass,
+                                     infall_time=infall_time,
+                                     Galaxy_name=name_file,
+                                     position=position
+                                     )
                 else:
-                    error_dataframe = error_dataframe.append({'Galaxy_name': name_file, 'error': 'no_stars'}, ignore_index=True)
+                    error_dataframe.loc[len(error_dataframe)] = {'Galaxy_name': name_file, 'error': 'no_stars'}
                     print('Not formed stars yet')      
     finally:
         # Restore stderr
@@ -119,7 +139,7 @@ def extract_parameter_array(sim_path='str', file_path='str') -> None:
     return error_dataframe
 
 
-def gen_files(sim_path: str, file_path: str) -> None:
+def gen_files(sim_path: str, file_path: str, position_flag=False) -> None:
     """
     Generate the parameter and observable files for all the given paths, and save them in the 2 separate folders for parameters and observables.
     It is suggested to use the glob library to get all the paths of the snapshots in the simulation like: path = glob.glob('storage/g?.??e??/g?.??e??.0????') 
@@ -138,7 +158,7 @@ def gen_files(sim_path: str, file_path: str) -> None:
 
         """
     with Pool() as pool:                       
-        df_list = pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path)))
+        df_list = pool.starmap(extract_parameter_array, zip(sim_path, [file_path]*len(sim_path), [position_flag]*len(sim_path)))
     
     error_dataframe = pd.concat(df_list, ignore_index=True)
     error_dataframe.to_parquet(os.path.join(file_path, 'error_dataframe.parquet'))
